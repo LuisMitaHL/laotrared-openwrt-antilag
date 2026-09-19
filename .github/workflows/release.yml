@@ -17,7 +17,6 @@ jobs:
       matrix:
         version:
           - 25.12.0   # OpenWrt 25.12 Apk
-          - 24.10.0   # OpenWrt 24.10 Ipk
         arch:
           # --- High-Performance ARM ---
           - aarch64_cortex-a53
@@ -53,7 +52,7 @@ jobs:
           mkdir -p dist
           
           # Find packages with "antilag" and copy them with arch prefix
-          for file in $(find bin/packages/ -type f \( -name "*antilag*.apk" -o -name "*antilag*.ipk" \)); do
+          for file in $(find bin/packages/ -type f -name "*antilag*.apk"); do
             filename=$(basename "$file")
             cp "$file" "dist/${{ matrix.arch }}_${filename}"
           done
