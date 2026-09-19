@@ -546,6 +546,13 @@ return view.extend({
             _('When enabled, the shaper will not drop below the configured minimum rates.'));
         o.default = '0';
 
+        o = moptDyn('advanced', form.Flag, 'qdisc_stats_debug',
+            _('Debug CAKE Statistics Reads'),
+            _('Log a line whenever live CAKE per-tin statistics cannot be ' +
+              'read from the kernel (errno and tin count). Enable for a ' +
+              'debugging session, then disable. Off by default.'));
+        o.default = '0';
+
         o = moptDyn('advanced', form.Value, 'stall_detection_thr',
             _('Stall Detection Threshold (missed pings)'),
             _('Number of missed ping rounds (per-reflector intervals) without any ' +

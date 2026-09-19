@@ -115,6 +115,10 @@ config antilag 'wan'
     option monitor_achieved_rates_interval_ms '200'
     option if_up_check_interval_s             '10.0'
 
+    # qdisc_stats_debug: log CAKE per-tin read failures (debugging aid)
+    #   0 = silent (default), 1 = log each failure streak once
+    option qdisc_stats_debug                  '0'
+
     # ── Pinger mode ─────────────────────────────────────────
     # ping_type: ICMP packet type used for OWD measurement.
     #

@@ -132,6 +132,15 @@ typedef struct {
     int64_t  monitor_achieved_rates_interval_us;
     int64_t  if_up_check_interval_us;
 
+    /*
+     * qdisc_stats_debug – log one line whenever live CAKE per-tin
+     * statistics cannot be read from the kernel (errno + tin_cnt).
+     * Off by default; enable for a debugging session, then disable.
+     *   0 = silent (default), 1 = log each failure streak once.
+     * UCI option: qdisc_stats_debug (dynamic instances only)
+     */
+    int      qdisc_stats_debug;
+
     /* ── Standalone CAKE qdisc setup options ──────────────────────────
      *
      * These control how the daemon creates the CAKE qdiscs at startup.

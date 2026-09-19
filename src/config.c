@@ -187,6 +187,7 @@ void config_set_defaults(cake_config_t *cfg)
     cfg->startup_wait_us                     = 0;
     cfg->monitor_achieved_rates_interval_us  = 200000;   /* 200 ms */
     cfg->if_up_check_interval_us             = 10000000; /* 10 s   */
+    cfg->qdisc_stats_debug                   = 0;        /* silent */
 
     /* ── CAKE qdisc options – "piece of cake" defaults ──────────
      *
@@ -347,6 +348,7 @@ int config_load(const char *section_name, cake_config_t *cfg)
     UCI_S_US (startup_wait_us,                      "startup_wait_s");
     UCI_MS_US(monitor_achieved_rates_interval_us,   "monitor_achieved_rates_interval_ms");
     UCI_S_US (if_up_check_interval_us,              "if_up_check_interval_s");
+    UCI_INT  (qdisc_stats_debug,                    "qdisc_stats_debug");
 
     /* ── CAKE qdisc options ─────────────────────────────────── */
 

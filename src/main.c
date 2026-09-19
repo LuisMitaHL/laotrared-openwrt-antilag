@@ -386,10 +386,44 @@ static void write_status_file(autorate_t *ar)
     cake_qdisc_stats_t dl_stats = { 0 }, ul_stats = { 0 };
     int have_dl = 0, have_ul = 0;
 
-    if (ar->tc_nl && ar->dl_setup_done)
+    /*
+     * Gated debug: when qdisc_stats_debug is set, log each failed
+     * stats read once per failure streak (errno + tin_cnt) so a
+     * future debugging session can see why per-tin tables are empty.
+     * Silent by default.
+     */
+    static int dbg_dl_logged = 0, dbg_ul_logged = 0;
+
+    if (ar->tc_nl && ar->dl_setup_done) {
+        int dl_err = 0;
         have_dl = (tc_cake_get_stats(ar->tc_nl, ar->cfg.dl_if, &dl_stats) == 0);
-    if (ar->tc_nl && ar->ul_setup_done)
+        if (!have_dl)
+            dl_err = errno;
+        if (ar->cfg.qdisc_stats_debug && !have_dl && !dbg_dl_logged) {
+            dbg_dl_logged = 1;
+            errno = dl_err;
+            syslog(LOG_WARNING,
+                   "qdisc_stats: DL %s read failed: %m (tin_cnt=%d)",
+                   ar->cfg.dl_if, dl_stats.tin_cnt);
+        } else if (have_dl) {
+            dbg_dl_logged = 0;
+        }
+    }
+    if (ar->tc_nl && ar->ul_setup_done) {
+        int ul_err = 0;
         have_ul = (tc_cake_get_stats(ar->tc_nl, ar->cfg.ul_if, &ul_stats) == 0);
+        if (!have_ul)
+            ul_err = errno;
+        if (ar->cfg.qdisc_stats_debug && !have_ul && !dbg_ul_logged) {
+            dbg_ul_logged = 1;
+            errno = ul_err;
+            syslog(LOG_WARNING,
+                   "qdisc_stats: UL %s read failed: %m (tin_cnt=%d)",
+                   ar->cfg.ul_if, ul_stats.tin_cnt);
+        } else if (have_ul) {
+            dbg_ul_logged = 0;
+        }
+    }
 
     FILE *f = fopen(ar->status_tmp_path, "w");
     if (!f)
