@@ -280,10 +280,6 @@ msgid ""
 "options below are not set."
 msgstr ""
 
-#: luci-app-antilag/www/luci-static/resources/antilag/status.js:295
-msgid "Fixed-rate shaping active — no live metrics for static instances."
-msgstr ""
-
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:218
 msgid "Flow Isolation (shared default)"
 msgstr ""

@@ -342,12 +342,6 @@ msgstr ""
 "Modo de aislamiento de reserva usado tanto para bajada como para subida "
 "cuando no se configuran las opciones específicas de dirección de abajo."
 
-#: luci-app-antilag/www/luci-static/resources/antilag/status.js:295
-msgid "Fixed-rate shaping active — no live metrics for static instances."
-msgstr ""
-"Modelado de velocidad fija activo: sin métricas en vivo para las instancias "
-"estáticas."
-
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:218
 msgid "Flow Isolation (shared default)"
 msgstr "Aislamiento de flujos (predeterminado compartido)"

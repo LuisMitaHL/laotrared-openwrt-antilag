@@ -314,9 +314,6 @@ function buildInstanceBlock(inst, withTins) {
 
         if (st.mode === 'static') {
             parts.push(buildStaticTable(st));
-            parts.push(E('div', {
-                'style': 'color:var(--text-color-medium,#555);margin-top:0.5em'
-            }, _('Fixed-rate shaping active — no live metrics for static instances.')));
             for (var s = 0; s < parts.length; s++)
                 wrap.appendChild(parts[s]);
             return wrap;
