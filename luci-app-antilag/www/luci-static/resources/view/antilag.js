@@ -98,14 +98,16 @@ return view.extend({
         s.tab('advanced', _('Advanced'));
         s.tab('health',   _('Reflector Health'));
 
-        function mopt(tab, type, name, label) {
-            var opt = s.taboption(tab, type, name, label);
+        function mopt(tab, type, name, label, description) {
+            var opt = s.taboption(tab, type, name, label, description);
             opt.modalonly = true;
             return opt;
         }
 
         /* ── Grid summary columns (also editable in the modal) ── */
-        o = s.taboption('general', form.Flag, 'enabled', _('Enable'));
+        o = s.taboption('general', form.Flag, 'enabled', _('Enable'),
+            _('Master switch for this instance. When off, the daemon does not ' +
+              'start and no CAKE qdisc is installed for this WAN pair.'));
         o.default = '0';
         o.rmempty = false;
         o.modalonly = false;
@@ -117,13 +119,25 @@ return view.extend({
         o.modalonly = false;
 
         o = s.taboption('general', form.Value, 'base_dl_shaper_rate_kbps',
-            _('Base Download Rate (kbps)'));
+            _('Base Download Rate (kbps)'),
+            _('Steady-state download rate held when the link is idle or lightly ' +
+              'loaded, and the value the algorithm decays back to. Set it to your ' +
+              'measured download speed minus roughly 5–10%. The rate ramps up from ' +
+              'here under load and backs off when latency rises. Rate accounting is ' +
+              'gross (it includes framing overhead), so a speed test reads a little ' +
+              'lower than the value entered here.'));
         o.datatype = 'uinteger';
         o.default  = '20000';
         o.modalonly = false;
 
         o = s.taboption('general', form.Value, 'base_ul_shaper_rate_kbps',
-            _('Base Upload Rate (kbps)'));
+            _('Base Upload Rate (kbps)'),
+            _('Steady-state upload rate held when the link is idle or lightly ' +
+              'loaded, and the value the algorithm decays back to. Set it to your ' +
+              'measured upload speed minus roughly 5–10%. The rate ramps up from ' +
+              'here under load and backs off when latency rises. Rate accounting is ' +
+              'gross (it includes framing overhead), so a speed test reads a little ' +
+              'lower than the value entered here.'));
         o.datatype = 'uinteger';
         o.default  = '20000';
         o.modalonly = false;
@@ -138,10 +152,15 @@ return view.extend({
               'Must be unique per instance.'));
         o.rmempty = false;
 
-        o = mopt('general', form.Flag, 'adjust_dl_shaper_rate', _('Adjust Download Shaper'));
+        o = mopt('general', form.Flag, 'adjust_dl_shaper_rate', _('Adjust Download Shaper'),
+            _('Allow the daemon to actively change the download shaper rate. ' +
+              'Disable to hold the download qdisc at its base rate and only ' +
+              'measure (for example when another tool owns download shaping).'));
         o.default = '1';
 
-        o = mopt('general', form.Flag, 'adjust_ul_shaper_rate', _('Adjust Upload Shaper'));
+        o = mopt('general', form.Flag, 'adjust_ul_shaper_rate', _('Adjust Upload Shaper'),
+            _('Allow the daemon to actively change the upload shaper rate. ' +
+              'Disable to hold the upload qdisc at its base rate and only measure.'));
         o.default = '1';
 
         mopt('general', form.Value, 'ping_bind_if', _('Ping Bind Interface'),
@@ -151,19 +170,36 @@ return view.extend({
               'reflector pings out an arbitrary WAN and corrupt the per-WAN measurement. ' +
               'Leave empty to follow the routing table (single-WAN).'));
 
-        function rateOption(tab, name, label, def) {
-            var opt = mopt(tab, form.Value, name, label);
+        function rateOption(tab, name, label, description, def) {
+            var opt = mopt(tab, form.Value, name, label, description);
             opt.datatype = 'uinteger';
             opt.default  = String(def);
             return opt;
         }
 
-        rateOption('general', 'min_dl_shaper_rate_kbps',  _('Min Download Rate (kbps)'),   5000);
-        rateOption('general', 'max_dl_shaper_rate_kbps',  _('Max Download Rate (kbps)'),  80000);
-        rateOption('general', 'min_ul_shaper_rate_kbps',  _('Min Upload Rate (kbps)'),     5000);
-        rateOption('general', 'max_ul_shaper_rate_kbps',  _('Max Upload Rate (kbps)'),   35000);
+        rateOption('general', 'min_dl_shaper_rate_kbps', _('Min Download Rate (kbps)'),
+            _('Lower hard floor for the download rate. The shaper is never reduced ' +
+              'below this, even under sustained bufferbloat. Set it to the lowest ' +
+              'bufferbloat-free download rate you have observed.'), 5000);
+        rateOption('general', 'max_dl_shaper_rate_kbps', _('Max Download Rate (kbps)'),
+            _('Upper ceiling for the download rate. Under high load the algorithm ' +
+              'ramps up toward this and backs off when latency rises. Set it to the ' +
+              'maximum your link can deliver, or slightly below to trade a little ' +
+              'throughput for tighter latency.'), 80000);
+        rateOption('general', 'min_ul_shaper_rate_kbps', _('Min Upload Rate (kbps)'),
+            _('Lower hard floor for the upload rate. The shaper is never reduced ' +
+              'below this, even under sustained bufferbloat. Set it to the lowest ' +
+              'bufferbloat-free upload rate you have observed.'), 5000);
+        rateOption('general', 'max_ul_shaper_rate_kbps', _('Max Upload Rate (kbps)'),
+            _('Upper ceiling for the upload rate. Under high load the algorithm ' +
+              'ramps up toward this and backs off when latency rises. Set it to the ' +
+              'maximum your link can deliver, or slightly below to keep latency ' +
+              'tighter.'), 35000);
         rateOption('general', 'connection_active_thr_kbps',
-            _('Connection Active Threshold (kbps)'), 2000);
+            _('Connection Active Threshold (kbps)'),
+            _('Achieved-rate threshold below which a direction counts as idle. ' +
+              'Below it the rate decays back toward base and the sleep function ' +
+              'may pause pinging.'), 2000);
 
         /* ════════════════════════════════════════════════════
          * CAKE Qdisc tab (modal)
@@ -240,7 +276,11 @@ return view.extend({
             _('Framing overhead added to each packet before rate accounting. ' +
               'Common values: <code>0</code> = Ethernet/plain, ' +
               '<code>8</code> = PPPoE over PTM (VDSL2), ' +
-              '<code>18</code> = PPPoE over ATM (ADSL LLC/SNAP).'));
+              '<code>18</code> = PPPoE over ATM (ADSL LLC/SNAP). ' +
+              'Being close matters more than being exact: underestimating lets too ' +
+              'much traffic into the link and causes bufferbloat, while ' +
+              'overestimating by a few bytes only costs a little throughput, so ' +
+              'when in doubt err on the high side.'));
         o.datatype = 'integer';
         o.default  = '0';
         o.placeholder = '0';
@@ -257,7 +297,10 @@ return view.extend({
         o = mopt('qdisc', form.Value, 'cake_mpu',
             _('Minimum Packet Unit (bytes)'),
             _('Packets shorter than this are padded before rate accounting. ' +
-              '<code>0</code> = disabled (CAKE default).'));
+              '<code>0</code> = disabled (CAKE default). Accounting for very small ' +
+              'packets matters on highly asymmetric links, where pure TCP ACKs can ' +
+              'fill the upload; <code>64</code> is a common safe value for ' +
+              'Ethernet-based links.'));
         o.datatype = 'uinteger';
         o.default  = '0';
         o.placeholder = '0';
@@ -345,7 +388,9 @@ return view.extend({
         o.datatype = 'float'; o.default = '30.0';
 
         o = mopt('advanced', form.Value, 'ul_owd_delta_delay_thr_ms',
-            _('UL Delay Threshold (ms)'));
+            _('UL Delay Threshold (ms)'),
+            _('OWD delta above this counts as a bufferbloat event for upload. ' +
+              'The upload counterpart of the DL delay threshold.'));
         o.datatype = 'float'; o.default = '30.0';
 
         o = mopt('advanced', form.Value, 'dl_avg_owd_delta_max_adjust_up_thr_ms',
@@ -354,7 +399,9 @@ return view.extend({
         o.datatype = 'float'; o.default = '10.0';
 
         o = mopt('advanced', form.Value, 'ul_avg_owd_delta_max_adjust_up_thr_ms',
-            _('UL Avg OWD Max Adjust-Up Threshold (ms)'));
+            _('UL Avg OWD Max Adjust-Up Threshold (ms)'),
+            _('Upload counterpart of the adjust-up threshold: at or below this ' +
+              'average OWD delta, the upload rate increases at maximum speed.'));
         o.datatype = 'float'; o.default = '10.0';
 
         o = mopt('advanced', form.Value, 'dl_avg_owd_delta_max_adjust_down_thr_ms',
@@ -363,7 +410,9 @@ return view.extend({
         o.datatype = 'float'; o.default = '60.0';
 
         o = mopt('advanced', form.Value, 'ul_avg_owd_delta_max_adjust_down_thr_ms',
-            _('UL Avg OWD Max Adjust-Down Threshold (ms)'));
+            _('UL Avg OWD Max Adjust-Down Threshold (ms)'),
+            _('Upload counterpart of the adjust-down threshold: at or above this ' +
+              'average OWD delta, the upload rate is reduced at maximum severity.'));
         o.datatype = 'float'; o.default = '60.0';
 
         o = mopt('advanced', form.Value, 'alpha_baseline_increase',
@@ -377,7 +426,10 @@ return view.extend({
         o.datatype = 'float'; o.default = '0.9';
 
         o = mopt('advanced', form.Value, 'alpha_delta_ewma',
-            _('Delta EWMA α'));
+            _('Delta EWMA α'),
+            _('Smoothing factor for the OWD delta above baseline. This smoothed ' +
+              'value scales how hard the rate is reduced on bufferbloat. Small = ' +
+              'steadier and slower to react; large = reacts faster to spikes.'));
         o.datatype = 'float'; o.default = '0.095';
 
         o = mopt('advanced', form.Value, 'shaper_rate_min_adjust_down_bufferbloat',
@@ -391,19 +443,31 @@ return view.extend({
         o.datatype = 'float'; o.default = '0.75';
 
         o = mopt('advanced', form.Value, 'shaper_rate_min_adjust_up_load_high',
-            _('Min Rate Up Factor (high load)'));
+            _('Min Rate Up Factor (high load)'),
+            _('Smallest multiplier applied when increasing the rate under high ' +
+              'load. The increase scales down toward this value as the average ' +
+              'OWD delta approaches the delay threshold (1.0 = no increase at ' +
+              'the limit).'));
         o.datatype = 'float'; o.default = '1.0';
 
         o = mopt('advanced', form.Value, 'shaper_rate_max_adjust_up_load_high',
-            _('Max Rate Up Factor (high load)'));
+            _('Max Rate Up Factor (high load)'),
+            _('Largest multiplier applied when increasing the rate under high ' +
+              'load (e.g. 1.04 = +4% per adjustment). Applied in full while the ' +
+              'average OWD delta is at or below the adjust-up threshold.'));
         o.datatype = 'float'; o.default = '1.04';
 
         o = mopt('advanced', form.Value, 'shaper_rate_adjust_down_load_low',
-            _('Rate Down Factor (low load)'));
+            _('Rate Down Factor (low load)'),
+            _('Multiplier used to step the rate back down toward the base rate ' +
+              'when load is low or idle (e.g. 0.99 = −1% per adjustment).'));
         o.datatype = 'float'; o.default = '0.99';
 
         o = mopt('advanced', form.Value, 'shaper_rate_adjust_up_load_low',
-            _('Rate Up Factor (low load)'));
+            _('Rate Up Factor (low load)'),
+            _('Multiplier used to step the rate back up toward the base rate when ' +
+              'the current rate is below base and load is low (e.g. 1.01 = +1% ' +
+              'per adjustment).'));
         o.datatype = 'float'; o.default = '1.01';
 
         o = mopt('advanced', form.Value, 'bufferbloat_detection_window',
@@ -432,11 +496,16 @@ return view.extend({
         o.datatype = 'uinteger'; o.default = '1000';
 
         o = mopt('advanced', form.Flag, 'enable_sleep_function',
-            _('Enable Sleep on Sustained Idle'));
+            _('Enable Sleep on Sustained Idle'),
+            _('Pause the active pingers after the link has been idle for the ' +
+              'sustained-idle threshold. Saves CPU and ICMP traffic; pinging ' +
+              'resumes automatically when traffic returns.'));
         o.default = '1';
 
         o = mopt('advanced', form.Value, 'sustained_idle_sleep_thr_s',
-            _('Idle Sleep Threshold (s)'));
+            _('Idle Sleep Threshold (s)'),
+            _('How long both directions must stay below the connection-active ' +
+              'threshold before the sleep function pauses the pingers.'));
         o.datatype = 'float'; o.default = '60.0';
 
         o = mopt('advanced', form.Flag, 'min_shaper_rates_enforcement',
@@ -445,7 +514,10 @@ return view.extend({
         o.default = '0';
 
         o = mopt('advanced', form.Value, 'stall_detection_thr',
-            _('Stall Detection Threshold (missed pings)'));
+            _('Stall Detection Threshold (missed pings)'),
+            _('Number of missed ping rounds (per-reflector intervals) without any ' +
+              'reflector response before the connection is declared stalled. The ' +
+              'stall state is shown in the live status block.'));
         o.datatype = 'uinteger'; o.default = '5';
 
         o = mopt('advanced', form.Value, 'connection_stall_thr_kbps',
@@ -454,7 +526,10 @@ return view.extend({
         o.datatype = 'uinteger'; o.default = '10';
 
         o = mopt('advanced', form.Value, 'global_ping_response_timeout_s',
-            _('Global Ping Response Timeout (s)'));
+            _('Global Ping Response Timeout (s)'),
+            _('Ultimate no-response guard: if no reflector has replied for this ' +
+              'long, the connection is treated as down and the shaper rates are ' +
+              'dropped to their minimums. Default: 10.'));
         o.datatype = 'float'; o.default = '10.0';
 
         o = mopt('advanced', form.Value, 'startup_wait_s',
@@ -468,7 +543,10 @@ return view.extend({
         o.datatype = 'uinteger'; o.default = '200';
 
         o = mopt('advanced', form.Value, 'if_up_check_interval_s',
-            _('Interface Up-Check Interval (s)'));
+            _('Interface Up-Check Interval (s)'),
+            _('How often the WAN interface is checked for presence. If it ' +
+              'disappears (e.g. a PPPoE/DHCP reconnect), shaping and pinging are ' +
+              'paused and recreated automatically when it returns.'));
         o.datatype = 'float'; o.default = '10.0';
 
         /* ════════════════════════════════════════════════════
