@@ -1051,11 +1051,21 @@ static void tc__parse_cake_app(const struct nlattr *app, cake_qdisc_stats_t *out
 
 /*
  * Decode one RTM_NEWQDISC reply message.
- * Returns 1 if it was a plain CAKE qdisc (stats decoded), 0 otherwise.
+ * Only messages for req_ifindex are considered: the kernel ignores
+ * tcm_ifindex on GETQDISC dumps and returns every qdisc in the system
+ * (like `tc qdisc show` without dev filter), so userspace must filter
+ * (like iproute2 does for `tc qdisc show dev <if>`).
+ * Returns 1 if it was this interface's plain CAKE qdisc (stats decoded),
+ * 0 otherwise.
  */
 static int tc__parse_qdisc_msg(const struct nlmsghdr *nlh,
+                               unsigned int req_ifindex,
                                cake_qdisc_stats_t *out)
 {
+    const struct tcmsg *tcm = (const struct tcmsg *)NLMSG_DATA(nlh);
+    if ((unsigned int)tcm->tcm_ifindex != req_ifindex)
+        return 0;
+
     char kind[32] = "";
     const struct nlattr *stats2 = NULL;
 
@@ -1092,6 +1102,7 @@ static int tc__parse_qdisc_msg(const struct nlmsghdr *nlh,
     while (rem2 >= (int)sizeof(*s) &&
            s->nla_len >= NLA_HDRLEN && s->nla_len <= rem2) {
         if (nla_stripped_type(s) == TCA_STATS_APP) {
+            snprintf(out->kind, sizeof(out->kind), "%s", kind);
             tc__parse_cake_app(s, out);
             return 1;
         }
@@ -1184,7 +1195,7 @@ int tc_cake_get_stats(tc_nl_ctx_t *ctx, const char *iface,
             }
 
             if (h->nlmsg_type == RTM_NEWQDISC)
-                found |= tc__parse_qdisc_msg(h, out);
+                found |= tc__parse_qdisc_msg(h, ifindex, out);
         }
     }
 
