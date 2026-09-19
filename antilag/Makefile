@@ -8,6 +8,10 @@ PKG_LICENSE         := GPL-2.0-or-later
 PKG_MAINTAINER      := kamikaonashi
 PKG_BUILD_PARALLEL  := 1
 
+# po2lmo is shipped by the luci-base host build; it compiles the po/
+# catalogs below into LuCI .lmo files at package install time.
+PKG_BUILD_DEPENDS   += luci-base/host
+
 include $(INCLUDE_DIR)/package.mk
 
 # $(CURDIR) is always the package directory regardless of SDK nesting depth.
@@ -101,6 +105,13 @@ define Package/antilag/install
 	$(INSTALL_DATA) \
 		$(PKG_ROOT)/luci-app-antilag/www/luci-static/resources/view/status/include/75_antilag.js \
 		$(1)/www/luci-static/resources/view/status/include/
+
+	# LuCI translations: compile po/<lang>/<domain>.po into the .lmo
+	# catalogs the web UI loads from /usr/lib/lua/luci/i18n.
+	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/i18n
+	$(STAGING_DIR_HOSTPKG)/bin/po2lmo \
+		$(PKG_ROOT)/luci-app-antilag/po/es/antilag.po \
+		$(1)/usr/lib/lua/luci/i18n/antilag.es.lmo
 endef
 
 $(eval $(call BuildPackage,antilag))

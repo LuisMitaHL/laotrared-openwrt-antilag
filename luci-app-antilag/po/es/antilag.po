@@ -1,0 +1,834 @@
+# Spanish translations for luci-app-antilag.
+# This file is distributed under the same license as the luci-app-antilag package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-antilag\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: 2026-02-26 00:00+0000\n"
+"Last-Translator: antilag <noreply@example.org>\n"
+"Language-Team: Spanish\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:562
+msgid "A reflector is counted as non-responsive if it has not replied within this time."
+msgstr "Un reflector se considera que no responde si no ha contestado dentro de este tiempo."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:309
+msgid "ACK Filter"
+msgstr "Filtro de ACK"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:294
+msgid "ATM – 48-byte cell rounding (ADSL)"
+msgstr "ATM: redondeo a celdas de 48 bytes (ADSL)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:289
+msgid "ATM/PTM Cell Compensation"
+msgstr "Compensación de celdas ATM/PTM"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:200
+msgid "Achieved-rate threshold below which a direction counts as idle. Below it the rate decays back toward base and the sleep function may pause pinging."
+msgstr "Umbral de velocidad alcanzada por debajo del cual una dirección se considera inactiva. Por debajo, la velocidad decae hacia la base y la función de reposo puede pausar los ping."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:74
+msgid "Adaptive CAKE shaper – automatically adjusts download and upload bandwidth based on measured one-way delay (OWD). Standalone operation: no sqm-scripts required. Each instance below shapes one WAN pair – add one instance per WAN for multi-WAN setups (e.g. with mwan3)."
+msgstr "Modelador CAKE adaptativo: ajusta automáticamente el ancho de banda de bajada y subida según el retardo unidireccional (OWD) medido. Funciona de forma autónoma: no requiere sqm-scripts. Cada instancia modela un par de WAN; añade una instancia por WAN en configuraciones multi-WAN (p. ej. con mwan3)."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:155
+msgid "Adjust Download Shaper"
+msgstr "Ajustar modelador de bajada"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:161
+msgid "Adjust Upload Shaper"
+msgstr "Ajustar modelador de subida"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:98
+msgid "Advanced"
+msgstr "Avanzado"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:315
+msgid "Aggressive"
+msgstr "Agresivo"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:156
+msgid "Allow the daemon to actively change the download shaper rate. Disable to hold the download qdisc at its base rate and only measure (for example when another tool owns download shaping)."
+msgstr "Permite que el demonio cambie activamente la velocidad del modelador de bajada. Desactívalo para mantener la qdisc de bajada en su velocidad base y solo medir (por ejemplo, si otra herramienta controla la modelación de bajada)."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:162
+msgid "Allow the daemon to actively change the upload shaper rate. Disable to hold the upload qdisc at its base rate and only measure."
+msgstr "Permite que el demonio cambie activamente la velocidad del modelador de subida. Desactívalo para mantener la qdisc de subida en su velocidad base y solo medir."
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:250
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:73
+#: luci-app-antilag/www/luci-static/resources/view/status/include/75_antilag.js:12
+#: root/usr/share/luci/menu.d/luci-app-antilag.json:3
+msgid "Antilag"
+msgstr "Antilag"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:92
+msgid "Antilag instance"
+msgstr "Instancia de Antilag"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:409
+msgid "At or above this average OWD delta, rate decreases at maximum speed."
+msgstr "Con un delta de OWD medio igual o superior a este, la velocidad disminuye a la máxima rapidez."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:398
+msgid "At or below this average OWD delta, rate increases at maximum speed."
+msgstr "Con un delta de OWD medio igual o inferior a este, la velocidad aumenta a la máxima rapidez."
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:149
+msgid "Avg Delay"
+msgstr "Retardo medio"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:148
+msgid "Backlog"
+msgstr "Cola pendiente"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:122
+msgid "Base Download Rate (kbps)"
+msgstr "Velocidad base de bajada (kbps)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:134
+msgid "Base Upload Rate (kbps)"
+msgstr "Velocidad base de subida (kbps)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:424
+msgid "Baseline EWMA α (decrease)"
+msgstr "α de EWMA de línea base (descenso)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:419
+msgid "Baseline EWMA α (increase)"
+msgstr "α de EWMA de línea base (aumento)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:167
+msgid "Bind the ICMP measurement socket to this interface (typically the same as the Upload Interface). Required for multi-WAN: without it, policy routing (mwan3) may send reflector pings out an arbitrary WAN and corrupt the per-WAN measurement. Leave empty to follow the routing table (single-WAN)."
+msgstr "Vincula el socket de medición ICMP a esta interfaz (normalmente la misma que la Interfaz de subida). Necesario para multi-WAN: sin ello, el enrutamiento por políticas (mwan3) puede enviar los ping de los reflectores por una WAN arbitraria y corromper la medición de cada WAN. Déjalo vacío para seguir la tabla de enrutamiento (una sola WAN)."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:329
+msgid "Break large GSO/GRO segment groups into individual packets before scheduling. Strongly recommended – improves per-packet latency on high-throughput links."
+msgstr "Divide los grupos de segmentos GSO/GRO grandes en paquetes individuales antes de planificarlos. Muy recomendado: mejora la latencia por paquete en enlaces de alto rendimiento."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:479
+msgid "Bufferbloat Detection Threshold"
+msgstr "Umbral de detección de bufferbloat"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:474
+msgid "Bufferbloat Detection Window"
+msgstr "Ventana de detección de bufferbloat"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:489
+msgid "Bufferbloat Refractory Period (ms)"
+msgstr "Periodo refractario de bufferbloat (ms)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:97
+msgid "CAKE Qdisc"
+msgstr "Qdisc CAKE"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:263
+msgid "CAKE per-tin statistics unavailable (qdisc not up)."
+msgstr "Estadísticas por tin de CAKE no disponibles (la qdisc no está activa)."
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:171
+msgid "CAKE tin stats"
+msgstr "Estadísticas de tin de CAKE"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:319
+msgid "CAKE's internal AQM target RTT. <code>0</code> = use CAKE default (100 ms). Lower values improve latency on very fast links; higher values suit high-latency paths."
+msgstr "RTT objetivo del AQM interno de CAKE. <code>0</code> = usar el valor predeterminado de CAKE (100 ms). Valores más bajos mejoran la latencia en enlaces muy rápidos; valores más altos convienen a rutas de alta latencia."
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:174
+msgid "Capacity estimate"
+msgstr "Capacidad estimada"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:199
+msgid "Connection Active Threshold (kbps)"
+msgstr "Umbral de conexión activa (kbps)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:524
+msgid "Connection Stall Rate Threshold (kbps)"
+msgstr "Umbral de velocidad de conexión bloqueada (kbps)"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:111
+msgid "DL Actual"
+msgstr "Bajada real"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:408
+msgid "DL Avg OWD Max Adjust-Down Threshold (ms)"
+msgstr "Umbral máx. de ajuste a la baja del OWD medio de bajada (ms)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:397
+msgid "DL Avg OWD Max Adjust-Up Threshold (ms)"
+msgstr "Umbral máx. de ajuste al alza del OWD medio de bajada (ms)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:386
+msgid "DL Delay Threshold (ms)"
+msgstr "Umbral de retardo de bajada (ms)"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:112
+msgid "DL Load"
+msgstr "Carga de bajada"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:110
+msgid "DL Shaped"
+msgstr "Bajada modelada"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:268
+msgid "DSCP Wash (Upload)"
+msgstr "Lavado de DSCP (subida)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:494
+msgid "Decay Refractory Period (ms)"
+msgstr "Periodo refractario de decaimiento (ms)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:429
+msgid "Delta EWMA α"
+msgstr "α de EWMA del delta"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:210
+msgid "Determines how packets are sorted into CAKE tins for prioritisation."
+msgstr "Determina cómo se clasifican los paquetes en los tin de CAKE para priorizarlos."
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:275
+msgid "Disabled"
+msgstr "Desactivado"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:256
+msgid "Download"
+msgstr "Bajada"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:149
+msgid "Download Interface"
+msgstr "Interfaz de bajada"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:146
+msgid "Dropped"
+msgstr "Descartados"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:147
+msgid "ECN Marks"
+msgstr "Marcas ECN"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:108
+msgid "Enable"
+msgstr "Activar"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:499
+msgid "Enable Sleep on Sustained Idle"
+msgstr "Activar reposo tras inactividad prolongada"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:273
+msgid "Enabled – not running"
+msgstr "Activado, no en ejecución"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:512
+msgid "Enforce Min Rates on Idle / Stall"
+msgstr "Forzar velocidades mínimas en inactividad / bloqueo"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:219
+msgid "Fallback isolation mode used for both DL and UL when the direction-specific options below are not set."
+msgstr "Modo de aislamiento de reserva usado tanto para bajada como para subida cuando no se configuran las opciones específicas de dirección de abajo."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:218
+msgid "Flow Isolation (shared default)"
+msgstr "Aislamiento de flujos (predeterminado compartido)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:230
+msgid "Flow Isolation – Download (IFB/ingress)"
+msgstr "Aislamiento de flujos: bajada (IFB/ingress)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:246
+msgid "Flow Isolation – Upload (WAN/egress)"
+msgstr "Aislamiento de flujos: subida (WAN/egress)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:485
+msgid "Fraction of current shaper rate above which load is \"high\" (e.g. 0.75)."
+msgstr "Fracción de la velocidad actual del modelador por encima de la cual la carga es «alta» (p. ej. 0,75)."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:276
+msgid "Framing overhead added to each packet before rate accounting. Common values: <code>0</code> = Ethernet/plain, <code>8</code> = PPPoE over PTM (VDSL2), <code>18</code> = PPPoE over ATM (ADSL LLC/SNAP). Being close matters more than being exact: underestimating lets too much traffic into the link and causes bufferbloat, while overestimating by a few bytes only costs a little throughput, so when in doubt err on the high side."
+msgstr "Sobrecarga de trama añadida a cada paquete antes de contabilizar la velocidad. Valores habituales: <code>0</code> = Ethernet/simple, <code>8</code> = PPPoE sobre PTM (VDSL2), <code>18</code> = PPPoE sobre ATM (ADSL LLC/SNAP). Acertar aproximadamente importa más que acertar exactamente: subestimarla deja entrar demasiado tráfico en el enlace y provoca bufferbloat, mientras que sobreestimarla unos pocos bytes solo cuesta un poco de rendimiento; en caso de duda, elige un valor alto."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:96
+msgid "General"
+msgstr "General"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:529
+msgid "Global Ping Response Timeout (s)"
+msgstr "Tiempo de espera global de respuesta de ping (s)"
+
+#: root/usr/share/rpcd/acl.d/luci-app-antilag.json:3
+msgid "Grant access for luci-app-antilag"
+msgstr "Conceder acceso a luci-app-antilag"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:290
+msgid "Hardware-layer cell-size rounding. Use instead of (or in addition to) overhead for DSL links with cell-based framing."
+msgstr "Redondeo al tamaño de celda de la capa física. Úsalo en lugar de (o además de) la sobrecarga en enlaces DSL con tramas basadas en celdas."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:556
+msgid "Health Check Interval (s)"
+msgstr "Intervalo de comprobación de estado (s)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:484
+msgid "High Load Threshold (fraction)"
+msgstr "Umbral de carga alta (fracción)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:507
+msgid "How long both directions must stay below the connection-active threshold before the sleep function pauses the pingers."
+msgstr "Cuánto tiempo deben permanecer ambas direcciones por debajo del umbral de conexión activa antes de que la función de reposo pause los pinger."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:369
+msgid "How many reflectors to ping concurrently."
+msgstr "Cuántos reflectores se pinguean simultáneamente."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:480
+msgid "How many samples in the window must show delay before bufferbloat is declared."
+msgstr "Cuántas muestras de la ventana deben mostrar retardo para declarar bufferbloat."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:542
+msgid "How often achieved DL/UL rates are sampled from sysfs."
+msgstr "Con qué frecuencia se muestrean las velocidades reales de bajada/subida desde sysfs."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:582
+msgid "How often active reflectors are compared against spare candidates."
+msgstr "Con qué frecuencia se comparan los reflectores activos con los candidatos de reserva."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:557
+msgid "How often each reflector is checked for missed responses."
+msgstr "Con qué frecuencia se comprueba cada reflector en busca de respuestas perdidas."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:547
+msgid "How often the WAN interface is checked for presence. If it disappears (e.g. a PPPoE/DHCP reconnect), shaping and pinging are paused and recreated automatically when it returns."
+msgstr "Con qué frecuencia se comprueba la presencia de la interfaz WAN. Si desaparece (p. ej. una reconexión PPPoE/DHCP), la modelación y el ping se pausan y se recrean automáticamente cuando vuelve."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:351
+msgid "ICMP Echo (type 8) – RTT/2, symmetric estimate"
+msgstr "ICMP Echo (tipo 8): RTT/2, estimación simétrica"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:352
+msgid "ICMP Timestamp (type 13) – true per-direction OWD"
+msgstr "ICMP Timestamp (tipo 13): OWD real por dirección"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:340
+msgid "ICMP packet type used for OWD measurement.<br><strong>ICMP Echo (type 8)</strong>: measures RTT; OWD = RTT/2. Works against any host. Assumes symmetric path — inaccurate for asymmetric connections (DSL, cable, DOCSIS).<br><strong>ICMP Timestamp (type 13)</strong>: reflector returns its own receive/transmit timestamps giving true per-direction OWD. Recommended for asymmetric broadband. Requires reflectors that support timestamp replies — see <a href=\"https://github.com/tievolu/timestamp-reflectors\" target=\"_blank\">timestamp-reflectors</a>."
+msgstr "Tipo de paquete ICMP usado para medir el OWD.<br><strong>ICMP Echo (tipo 8)</strong>: mide el RTT; OWD = RTT/2. Funciona con cualquier host. Supone una ruta simétrica; impreciso en conexiones asimétricas (DSL, cable, DOCSIS).<br><strong>ICMP Timestamp (tipo 13)</strong>: el reflector devuelve sus propias marcas de recepción/transmisión, lo que da el OWD real por dirección. Recomendado para banda ancha asimétrica. Requiere reflectores que admitan respuestas de marca de tiempo; consulta <a href=\"https://github.com/tievolu/timestamp-reflectors\" target=\"_blank\">timestamp-reflectors</a>."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:381
+msgid "ICMP ping targets. The first <em>N</em> (= Number of Active Pingers) are active; the rest are spares for automatic replacement."
+msgstr "Destinos de ping ICMP. Los primeros <em>N</em> (= Número de pingers activos) están activos; el resto son de reserva para el reemplazo automático."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:150
+msgid "IFB interface that carries shaped ingress traffic (e.g. <code>ifb-wan1</code>). Created automatically at startup if it does not exist. Must be unique per instance."
+msgstr "Interfaz IFB que transporta el tráfico de entrada modelado (p. ej. <code>ifb-wan1</code>). Se crea automáticamente al iniciar si no existe. Debe ser única por instancia."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:506
+msgid "Idle Sleep Threshold (s)"
+msgstr "Umbral de reposo por inactividad (s)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:525
+msgid "If both DL and UL are below this while pings time out, declare a stall."
+msgstr "Si tanto la bajada como la subida están por debajo de este valor mientras los ping agotan el tiempo de espera, se declara un bloqueo."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:86
+msgid "Instances"
+msgstr "Instancias"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:546
+msgid "Interface Up-Check Interval (s)"
+msgstr "Intervalo de comprobación de la interfaz (s)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:231
+msgid "Isolation for the IFB ingress qdisc. For asymmetric links, <strong>dual-dsthost</strong> is often better: it isolates per destination (local host), preventing any single LAN client from starving others on the download side. Leave at \"-1 (use shared default)\" to inherit from the setting above."
+msgstr "Aislamiento de la qdisc de entrada IFB. En enlaces asimétricos, <strong>dual-dsthost</strong> suele ser mejor: aísla por destino (host local), lo que evita que un solo cliente de la LAN deje sin ancho de banda a los demás en la bajada. Déjalo en «-1 (usar predeterminado compartido)» para heredar el ajuste de arriba."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:247
+msgid "Isolation for the WAN egress qdisc. For asymmetric links, <strong>dual-srchost</strong> is often better: it isolates per source (local host), preventing any single LAN client from monopolising upload capacity. Leave at \"-1 (use shared default)\" to inherit from the setting above."
+msgstr "Aislamiento de la qdisc de salida de la WAN. En enlaces asimétricos, <strong>dual-srchost</strong> suele ser mejor: aísla por origen (host local), lo que evita que un solo cliente de la LAN acapare la capacidad de subida. Déjalo en «-1 (usar predeterminado compartido)» para heredar el ajuste de arriba."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:425
+msgid "Large value → fast relaxation when OWD drops (0.9 = fast)."
+msgstr "Valor alto → relajación rápida cuando baja el OWD (0,9 = rápido)."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:455
+msgid "Largest multiplier applied when increasing the rate under high load (e.g. 1.04 = +4% per adjustment). Applied in full while the average OWD delta is at or below the adjust-up threshold."
+msgstr "Multiplicador máximo aplicado al aumentar la velocidad con carga alta (p. ej. 1,04 = +4 % por ajuste). Se aplica íntegro mientras el delta de OWD medio esté en o por debajo del umbral de ajuste al alza."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:618
+msgid "Live Status"
+msgstr "Estado en vivo"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:181
+msgid "Lower hard floor for the download rate. The shaper is never reduced below this, even under sustained bufferbloat. Set it to the lowest bufferbloat-free download rate you have observed."
+msgstr "Límite inferior absoluto de la velocidad de bajada. El modelador nunca baja de aquí, ni siquiera con bufferbloat sostenido. Configúralo con la velocidad de bajada sin bufferbloat más baja que hayas observado."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:190
+msgid "Lower hard floor for the upload rate. The shaper is never reduced below this, even under sustained bufferbloat. Set it to the lowest bufferbloat-free upload rate you have observed."
+msgstr "Límite inferior absoluto de la velocidad de subida. El modelador nunca baja de aquí, ni siquiera con bufferbloat sostenido. Configúralo con la velocidad de subida sin bufferbloat más baja que hayas observado."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:109
+msgid "Master switch for this instance. When off, the daemon does not start and no CAKE qdisc is installed for this WAN pair."
+msgstr "Interruptor principal de esta instancia. Si está desactivado, el demonio no se inicia y no se instala ninguna qdisc CAKE para este par de WAN."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:184
+msgid "Max Download Rate (kbps)"
+msgstr "Velocidad máxima de bajada (kbps)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:441
+msgid "Max Rate Down Factor (bufferbloat)"
+msgstr "Factor máx. de reducción (bufferbloat)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:454
+msgid "Max Rate Up Factor (high load)"
+msgstr "Factor máx. de aumento (carga alta)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:193
+msgid "Max Upload Rate (kbps)"
+msgstr "Velocidad máxima de subida (kbps)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:442
+msgid "Maximum multiplier on severe bufferbloat (e.g. 0.75 = −25%)."
+msgstr "Multiplicador máximo ante bufferbloat grave (p. ej. 0,75 = −25 %)."
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:176
+msgid "Memory"
+msgstr "Memoria"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:180
+msgid "Min Download Rate (kbps)"
+msgstr "Velocidad mínima de bajada (kbps)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:436
+msgid "Min Rate Down Factor (bufferbloat)"
+msgstr "Factor mín. de reducción (bufferbloat)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:446
+msgid "Min Rate Up Factor (high load)"
+msgstr "Factor mín. de aumento (carga alta)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:189
+msgid "Min Upload Rate (kbps)"
+msgstr "Velocidad mínima de subida (kbps)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:298
+msgid "Minimum Packet Unit (bytes)"
+msgstr "Unidad mínima de paquete (bytes)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:437
+msgid "Minimum multiplier on bufferbloat (e.g. 0.99 = −1%)."
+msgstr "Multiplicador mínimo ante bufferbloat (p. ej. 0,99 = −1 %)."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:577
+msgid "Minimum time between automatic replacements. Default: 3600 (1 hour)."
+msgstr "Tiempo mínimo entre reemplazos automáticos. Predeterminado: 3600 (1 hora)."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:490
+msgid "Minimum time between consecutive rate-down adjustments."
+msgstr "Tiempo mínimo entre ajustes consecutivos a la baja."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:495
+msgid "Minimum time between idle/low-load rate adjustments."
+msgstr "Tiempo mínimo entre ajustes por inactividad/carga baja."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:571
+msgid "Misbehaving Detection Threshold"
+msgstr "Umbral de detección de mal comportamiento"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:566
+msgid "Misbehaving Detection Window (checks)"
+msgstr "Ventana de detección de mal comportamiento (comprobaciones)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:572
+msgid "Missed responses within the window required to trigger automatic replacement."
+msgstr "Respuestas perdidas dentro de la ventana necesarias para activar el reemplazo automático."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:314
+msgid "Moderate filtering"
+msgstr "Filtrado moderado"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:462
+msgid "Multiplier used to step the rate back down toward the base rate when load is low or idle (e.g. 0.99 = −1% per adjustment)."
+msgstr "Multiplicador usado para acercar la velocidad a la base cuando la carga es baja o nula (p. ej. 0,99 = −1 % por ajuste)."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:468
+msgid "Multiplier used to step the rate back up toward the base rate when the current rate is below base and load is low (e.g. 1.01 = +1% per adjustment)."
+msgstr "Multiplicador usado para acercar la velocidad a la base cuando la velocidad actual está por debajo de la base y la carga es baja (p. ej. 1,01 = +1 % por ajuste)."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:262
+msgid "NAT-Aware Flow Hashing"
+msgstr "Hash de flujos con reconocimiento de NAT"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:298
+msgid "No antilag instances configured."
+msgstr "No hay instancias de antilag configuradas."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:293
+msgid "None (default – Ethernet / PTM with overhead)"
+msgstr "Ninguna (predeterminado: Ethernet / PTM con sobrecarga)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:368
+msgid "Number of Active Pingers"
+msgstr "Número de pingers activos"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:475
+msgid "Number of consecutive ping samples examined for delay."
+msgstr "Número de muestras de ping consecutivas examinadas para detectar retardo."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:518
+msgid "Number of missed ping rounds (per-reflector intervals) without any reflector response before the connection is declared stalled. The stall state is shown in the live status block."
+msgstr "Número de rondas de ping perdidas (intervalos por reflector) sin respuesta de ningún reflector antes de declarar la conexión bloqueada. El estado de bloqueo se muestra en el bloque de estado en vivo."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:586
+msgid "OWD Baselines Sum Delta Threshold (ms)"
+msgstr "Umbral de delta de suma de líneas base de OWD (ms)"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:113
+msgid "OWD DL Δ"
+msgstr "Δ OWD bajada"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:591
+msgid "OWD EWMA Delta Threshold (ms)"
+msgstr "Umbral de delta de EWMA de OWD (ms)"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:117
+msgid "OWD UL Δ"
+msgstr "Δ OWD subida"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:387
+msgid "OWD delta above this counts as a bufferbloat event for download."
+msgstr "Un delta de OWD por encima de este valor cuenta como evento de bufferbloat en la bajada."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:392
+msgid "OWD delta above this counts as a bufferbloat event for upload. The upload counterpart of the DL delay threshold."
+msgstr "Un delta de OWD por encima de este valor cuenta como evento de bufferbloat en la subida. Es la versión de subida del umbral de retardo de bajada."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:313
+msgid "Off (default)"
+msgstr "Desactivado (predeterminado)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:295
+msgid "PTM – 64-byte expansion (VDSL2 alternative)"
+msgstr "PTM: expansión a 64 bytes (alternativa para VDSL2)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:299
+msgid "Packets shorter than this are padded before rate accounting. <code>0</code> = disabled (CAKE default). Accounting for very small packets matters on highly asymmetric links, where pure TCP ACKs can fill the upload; <code>64</code> is a common safe value for Ethernet-based links."
+msgstr "Los paquetes más cortos que este valor se rellenan antes de contabilizar la velocidad. <code>0</code> = desactivado (predeterminado de CAKE). Contabilizar los paquetes muy pequeños importa en enlaces muy asimétricos, donde los ACK TCP puros pueden llenar la subida; <code>64</code> es un valor seguro habitual en enlaces basados en Ethernet."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:356
+msgid "Path to a plain-text file of reflector IP addresses, one per line (lines starting with <code>#</code> are ignored). When set, overrides the Reflectors list above. The daemon shuffles the list on each startup for reflector diversity.<br>Intended for use with large timestamp-reflector lists from <a href=\"https://github.com/tievolu/timestamp-reflectors\" target=\"_blank\">github.com/tievolu/timestamp-reflectors</a>.<br>Leave blank to use the Reflectors list."
+msgstr "Ruta a un archivo de texto plano con direcciones IP de reflectores, una por línea (las líneas que empiezan por <code>#</code> se ignoran). Si se define, anula la lista de Reflectores de arriba. El demonio mezcla la lista en cada arranque para diversificar los reflectores.<br>Pensado para usarse con listas grandes de timestamp-reflectors de <a href=\"https://github.com/tievolu/timestamp-reflectors\" target=\"_blank\">github.com/tievolu/timestamp-reflectors</a>.<br>Déjalo en blanco para usar la lista de Reflectores."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:500
+msgid "Pause the active pingers after the link has been idle for the sustained-idle threshold. Saves CPU and ICMP traffic; pinging resumes automatically when traffic returns."
+msgstr "Pausa los pinger activos después de que el enlace haya estado inactivo durante el umbral de inactividad prolongada. Ahorra CPU y tráfico ICMP; el ping se reanuda automáticamente cuando vuelve el tráfico."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:263
+msgid "Peek inside NAT/masquerade to correctly identify flows by their real source address. Strongly recommended for home routers doing SNAT."
+msgstr "Inspecciona dentro de NAT/masquerade para identificar correctamente los flujos por su dirección de origen real. Muy recomendado en routers domésticos que hacen SNAT."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:275
+msgid "Per-Packet Overhead (bytes)"
+msgstr "Sobrecarga por paquete (bytes)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:166
+msgid "Ping Bind Interface"
+msgstr "Interfaz de enlace para ping"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:374
+msgid "Ping Interval (s)"
+msgstr "Intervalo de ping (s)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:339
+msgid "Ping Type"
+msgstr "Tipo de ping"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:38
+msgid "RPC error: %s"
+msgstr "Error de RPC: %s"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:461
+msgid "Rate Down Factor (low load)"
+msgstr "Factor de reducción (carga baja)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:541
+msgid "Rate Monitor Interval (ms)"
+msgstr "Intervalo del monitor de velocidad (ms)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:467
+msgid "Rate Up Factor (low load)"
+msgstr "Factor de aumento (carga baja)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:581
+msgid "Reflector Comparison Interval (s)"
+msgstr "Intervalo de comparación de reflectores (s)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:99
+msgid "Reflector Health"
+msgstr "Estado de los reflectores"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:576
+msgid "Reflector Replacement Interval (s)"
+msgstr "Intervalo de reemplazo de reflectores (s)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:380
+msgid "Reflectors"
+msgstr "Reflectores"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:355
+msgid "Reflectors File"
+msgstr "Archivo de reflectores"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:587
+msgid "Replace a reflector if its OWD baseline sum exceeds a spare's by more than this."
+msgstr "Reemplaza un reflector si la suma de sus líneas base de OWD supera a la de uno de reserva en más de este valor."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:592
+msgid "Replacement threshold based on the OWD-delta EWMA."
+msgstr "Umbral de reemplazo basado en la EWMA del delta de OWD."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:561
+msgid "Response Deadline (s)"
+msgstr "Plazo de respuesta (s)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:611
+msgid "Restart"
+msgstr "Reiniciar"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:269
+msgid "Running – status parse error"
+msgstr "En ejecución: error al analizar el estado"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:271
+msgid "Running – status unreadable"
+msgstr "En ejecución: estado ilegible"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:537
+msgid "Seconds to pause after start before adjusting rates."
+msgstr "Segundos de pausa tras el arranque antes de ajustar las velocidades."
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:145
+msgid "Sent"
+msgstr "Enviados"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:32
+msgid "Service %s failed."
+msgstr "El servicio %s ha fallado."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:31
+msgid "Service %s successful."
+msgstr "El servicio %s se ha realizado correctamente."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:602
+msgid "Service Control"
+msgstr "Control del servicio"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:567
+msgid "Sliding window size for counting missed-response events per reflector."
+msgstr "Tamaño de la ventana deslizante para contar eventos de respuesta perdida por reflector."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:420
+msgid "Small value → slow upward tracking (0.001 = very slow)."
+msgstr "Valor pequeño → seguimiento ascendente lento (0,001 = muy lento)."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:447
+msgid "Smallest multiplier applied when increasing the rate under high load. The increase scales down toward this value as the average OWD delta approaches the delay threshold (1.0 = no increase at the limit)."
+msgstr "Multiplicador mínimo aplicado al aumentar la velocidad con carga alta. El aumento se reduce hacia este valor a medida que el delta de OWD medio se acerca al umbral de retardo (1,0 = sin aumento en el límite)."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:430
+msgid "Smoothing factor for the OWD delta above baseline. This smoothed value scales how hard the rate is reduced on bufferbloat. Small = steadier and slower to react; large = reacts faster to spikes."
+msgstr "Factor de suavizado del delta de OWD respecto a la línea base. Este valor suavizado determina cuánto se reduce la velocidad ante bufferbloat. Pequeño = más estable y lento en reaccionar; grande = reacciona antes a los picos."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:328
+msgid "Split GSO Super-Packets"
+msgstr "Dividir superpaquetes GSO"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:517
+msgid "Stall Detection Threshold (missed pings)"
+msgstr "Umbral de detección de bloqueo (ping perdidos)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:609
+msgid "Start"
+msgstr "Iniciar"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:536
+msgid "Startup Wait (s)"
+msgstr "Espera al arrancar (s)"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:109
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:187
+msgid "Status"
+msgstr "Estado"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:123
+msgid "Steady-state download rate held when the link is idle or lightly loaded, and the value the algorithm decays back to. Set it to your measured download speed minus roughly 5–10%. The rate ramps up from here under load and backs off when latency rises. Rate accounting is gross (it includes framing overhead), so a speed test reads a little lower than the value entered here."
+msgstr "Velocidad de bajada en régimen estable que se mantiene cuando el enlace está inactivo o poco cargado, y valor al que el algoritmo decae. Configúrala como tu velocidad de bajada medida menos un 5–10 % aproximadamente. La velocidad sube desde aquí con carga y retrocede cuando aumenta la latencia. La contabilidad de velocidad es bruta (incluye la sobrecarga de trama), así que un test de velocidad mostrará algo menos que el valor introducido aquí."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:135
+msgid "Steady-state upload rate held when the link is idle or lightly loaded, and the value the algorithm decays back to. Set it to your measured upload speed minus roughly 5–10%. The rate ramps up from here under load and backs off when latency rises. Rate accounting is gross (it includes framing overhead), so a speed test reads a little lower than the value entered here."
+msgstr "Velocidad de subida en régimen estable que se mantiene cuando el enlace está inactivo o poco cargado, y valor al que el algoritmo decae. Configúrala como tu velocidad de subida medida menos un 5–10 % aproximadamente. La velocidad sube desde aquí con carga y retrocede cuando aumenta la latencia. La contabilidad de velocidad es bruta (incluye la sobrecarga de trama), así que un test de velocidad mostrará algo menos que el valor introducido aquí."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:610
+msgid "Stop"
+msgstr "Detener"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:269
+msgid "Strip DSCP markings on egress (upload to ISP) so the carrier cannot exploit your internal QoS markings. Applied to the WAN qdisc only; download markings are preserved for local use."
+msgstr "Elimina las marcas DSCP a la salida (subida al ISP) para que el operador no pueda aprovechar tus marcas QoS internas. Se aplica solo a la qdisc de la WAN; las marcas de bajada se conservan para uso local."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:310
+msgid "Suppress redundant TCP ACKs on the upload path to recover capacity on asymmetric connections. Off by default (safest)."
+msgstr "Suprime los ACK TCP redundantes en la ruta de subida para recuperar capacidad en conexiones asimétricas. Desactivado de forma predeterminada (lo más seguro)."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:318
+msgid "Target RTT (ms)"
+msgstr "RTT objetivo (ms)"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:144
+msgid "Threshold"
+msgstr "Umbral"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:375
+msgid "Time between pings to each individual reflector."
+msgstr "Tiempo entre ping a cada reflector individual."
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:143
+msgid "Tin"
+msgstr "Tin"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:209
+msgid "Traffic Classification"
+msgstr "Clasificación de tráfico"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:115
+msgid "UL Actual"
+msgstr "Subida real"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:413
+msgid "UL Avg OWD Max Adjust-Down Threshold (ms)"
+msgstr "Umbral máx. de ajuste a la baja del OWD medio de subida (ms)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:402
+msgid "UL Avg OWD Max Adjust-Up Threshold (ms)"
+msgstr "Umbral máx. de ajuste al alza del OWD medio de subida (ms)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:391
+msgid "UL Delay Threshold (ms)"
+msgstr "Umbral de retardo de subida (ms)"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:116
+msgid "UL Load"
+msgstr "Carga de subida"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:114
+msgid "UL Shaped"
+msgstr "Subida modelada"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:530
+msgid "Ultimate no-response guard: if no reflector has replied for this long, the connection is treated as down and the shaper rates are dropped to their minimums. Default: 10."
+msgstr "Protección final ante falta de respuesta: si ningún reflector ha respondido durante este tiempo, la conexión se considera caída y las velocidades del modelador bajan a sus mínimos. Predeterminado: 10."
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:258
+msgid "Upload"
+msgstr "Subida"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:115
+msgid "Upload Interface"
+msgstr "Interfaz de subida"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:414
+msgid "Upload counterpart of the adjust-down threshold: at or above this average OWD delta, the upload rate is reduced at maximum severity."
+msgstr "Versión de subida del umbral de ajuste a la baja: con un delta de OWD medio igual o superior a este, la velocidad de subida se reduce con la máxima severidad."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:403
+msgid "Upload counterpart of the adjust-up threshold: at or below this average OWD delta, the upload rate increases at maximum speed."
+msgstr "Versión de subida del umbral de ajuste al alza: con un delta de OWD medio igual o inferior a este, la velocidad de subida aumenta a la máxima rapidez."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:185
+msgid "Upper ceiling for the download rate. Under high load the algorithm ramps up toward this and backs off when latency rises. Set it to the maximum your link can deliver, or slightly below to trade a little throughput for tighter latency."
+msgstr "Techo máximo de la velocidad de bajada. Con carga alta, el algoritmo sube hacia este valor y retrocede cuando aumenta la latencia. Configúralo con el máximo que pueda ofrecer tu enlace, o algo por debajo para cambiar un poco de rendimiento por una latencia más ajustada."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:194
+msgid "Upper ceiling for the upload rate. Under high load the algorithm ramps up toward this and backs off when latency rises. Set it to the maximum your link can deliver, or slightly below to keep latency tighter."
+msgstr "Techo máximo de la velocidad de subida. Con carga alta, el algoritmo sube hacia este valor y retrocede cuando aumenta la latencia. Configúralo con el máximo que pueda ofrecer tu enlace, o algo por debajo para mantener una latencia más ajustada."
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:118
+msgid "Uptime"
+msgstr "Tiempo activo"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:116
+msgid "WAN-facing interface for egress shaping (e.g. <code>wan1</code>). Must be unique per instance."
+msgstr "Interfaz orientada a la WAN para modelar la salida (p. ej. <code>wan1</code>). Debe ser única por instancia."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:513
+msgid "When enabled, the shaper will not drop below the configured minimum rates."
+msgstr "Si se activa, el modelador no bajará de las velocidades mínimas configuradas."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:214
+msgid "besteffort – single tin, no prioritisation"
+msgstr "besteffort: un solo tin, sin priorización"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:212
+msgid "diffserv4 – 4 tins: Bulk / Best-Effort / Streaming / Voice (recommended)"
+msgstr "diffserv4: 4 tin: Bulk / Best-Effort / Streaming / Voice (recomendado)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:213
+msgid "diffserv8 – 8 tins mapped to DSCP CS0–CS7"
+msgstr "diffserv8: 8 tin asignados a DSCP CS0–CS7"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:224
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:256
+msgid "dual-dsthost – per dst host + flow"
+msgstr "dual-dsthost: por host de destino + flujo"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:239
+msgid "dual-dsthost – per dst host + flow (recommended for DL)"
+msgstr "dual-dsthost: por host de destino + flujo (recomendado para bajada)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:223
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:240
+msgid "dual-srchost – per src host + flow"
+msgstr "dual-srchost: por host de origen + flujo"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:255
+msgid "dual-srchost – per src host + flow (recommended for UL)"
+msgstr "dual-srchost: por host de origen + flujo (recomendado para subida)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:226
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:242
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:258
+msgid "flows – per 5-tuple flow only"
+msgstr "flows: solo por flujo de 5 tuplas"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:225
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:241
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:257
+msgid "hosts – per src+dst host pair"
+msgstr "hosts: por par de hosts origen+destino"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:227
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:243
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:259
+msgid "none – no isolation"
+msgstr "none: sin aislamiento"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:215
+msgid "precedence – legacy IP Precedence field"
+msgstr "precedence: campo IP Precedence heredado"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:238
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:254
+msgid "triple – src host + dst host + 5-tuple flow"
+msgstr "triple: host de origen + host de destino + flujo de 5 tuplas"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:222
+msgid "triple – src host + dst host + 5-tuple flow (recommended)"
+msgstr "triple: host de origen + host de destino + flujo de 5 tuplas (recomendado)"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:237
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:253
+msgid "− use shared default above −"
+msgstr "− usar el predeterminado compartido de arriba −"
+
