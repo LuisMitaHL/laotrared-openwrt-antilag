@@ -6,10 +6,14 @@
 /*
  * 75_antilag.js  –  Antilag status widget for the LuCI Overview page.
  *
- * State logic (in priority order):
- *   1. /var/run/antilag.json exists and parses → daemon is running → show stats table
- *   2. UCI enabled = 1 but no status file     → enabled but not started / crashed
- *   3. UCI enabled = 0                         → disabled
+ * Multi-instance: every UCI 'antilag' section runs its own daemon process
+ * with its own status file (/var/run/antilag-<section>.json).  The widget
+ * renders one status block per instance, polled every POLL_MS.
+ *
+ * Per-instance state logic (in priority order):
+ *   1. status file exists and parses   → daemon running → stats + tin tables
+ *   2. UCI enabled = 1 but no file     → enabled but not started / crashed
+ *   3. UCI enabled = 0                 → disabled
  */
 
 var callFileRead = rpc.declare({
@@ -121,17 +125,6 @@ function buildStatsTable(st) {
     ]);
 }
 
-function buildSimpleTable(text, color) {
-    return E('table', { 'class': 'table', 'id': 'antilag_status_table' }, [
-        E('tr', { 'class': 'tr table-titles' }, [
-            E('th', { 'class': 'th' }, _('Status'))
-        ]),
-        E('tr', { 'class': 'tr' }, [
-            E('td', { 'class': 'td', 'style': 'color:' + color + ';font-weight:bold' }, text)
-        ])
-    ]);
-}
-
 /*
  * buildTinTable – live per-tin CAKE statistics (tc -s qdisc show style)
  * for one direction. Data comes from the kernel via the daemon's status
@@ -181,14 +174,44 @@ function buildTinTable(title, qd) {
         header.concat([ E('table', { 'class': 'table' }, rows) ]));
 }
 
-/* ── State resolution ────────────────────────────────────────── */
+function buildSimpleTable(text, color) {
+    return E('table', { 'class': 'table', 'id': 'antilag_status_table' }, [
+        E('tr', { 'class': 'tr table-titles' }, [
+            E('th', { 'class': 'th' }, _('Status'))
+        ]),
+        E('tr', { 'class': 'tr' }, [
+            E('td', { 'class': 'td', 'style': 'color:' + color + ';font-weight:bold' }, text)
+        ])
+    ]);
+}
 
-function resolveState(fileExists, raw, uciEnabled) {
+/* ── Per-instance status block ───────────────────────────────── */
+
+function statusPath(sid) {
+    return '/var/run/antilag-' + sid + '.json';
+}
+
+function instanceEnabled(sid) {
+    return uci.get('antilag', sid, 'enabled') === '1';
+}
+
+function fetchInstance(sid) {
+    return Promise.all([
+        callFileStat(statusPath(sid)).catch(function() { return ''; }),
+        callFileRead(statusPath(sid)).catch(function() { return ''; })
+    ]).then(function(res) {
+        return { sid: sid, exists: !!res[0], raw: res[1] || '' };
+    });
+}
+
+function buildInstanceBlock(inst) {
     var st = null;
-    try { if (raw) st = JSON.parse(raw); } catch (e) {}
+    try { if (inst.raw) st = JSON.parse(inst.raw); } catch (e) {}
 
-    if (fileExists && st && st.state) {
-        /* Main status row plus live per-tin CAKE statistics */
+    var wrap = E('div', { 'class': 'cbi-section', 'style': 'margin-bottom:1em' },
+        [ E('h3', {}, _('Antilag') + ' – ' + inst.sid) ]);
+
+    if (inst.exists && st && st.state) {
         var parts = [ buildStatsTable(st) ];
 
         if (st.cake_dl && st.cake_dl.tin_cnt)
@@ -196,32 +219,22 @@ function resolveState(fileExists, raw, uciEnabled) {
         if (st.cake_ul && st.cake_ul.tin_cnt)
             parts.push(buildTinTable(_('Upload') + ' (' + (st.ul_if || '') + ')', st.cake_ul));
 
-        if (!parts.slice(1).length)
+        if (parts.length === 1)
             parts.push(E('div', {
                 'style': 'color:#555;margin-top:0.5em'
             }, _('CAKE per-tin statistics unavailable (qdisc not up).')));
 
-        return E('div', {}, parts);
+        for (var i = 0; i < parts.length; i++)
+            wrap.appendChild(parts[i]);
     }
+    else if (inst.exists)
+        wrap.appendChild(buildSimpleTable(_('Active'), '#1a7f1a'));
+    else if (instanceEnabled(inst.sid))
+        wrap.appendChild(buildSimpleTable(_('Enabled – not running'), '#c07700'));
+    else
+        wrap.appendChild(buildSimpleTable(_('Disabled'), '#888'));
 
-    if (fileExists)
-        return buildSimpleTable(_('Active'), '#1a7f1a');
-
-    if (uciEnabled)
-        return buildSimpleTable(_('Enabled – not running'), '#c07700');
-
-    return buildSimpleTable(_('Disabled'), '#888');
-}
-
-/* ── UCI enabled check ───────────────────────────────────────── */
-
-function getUciEnabled() {
-    var sections = uci.sections('antilag', 'antilag');
-    for (var i = 0; i < sections.length; i++) {
-        if (sections[i].enabled === '1')
-            return true;
-    }
-    return false;
+    return wrap;
 }
 
 /* ── Poller ──────────────────────────────────────────────────── */
@@ -230,19 +243,24 @@ var POLL_MS = 3000;
 
 function startPoller(container) {
     function poll() {
-        Promise.all([
-            uci.load('antilag'),
-            callFileStat('/var/run/antilag.json').catch(function() { return ''; }),
-            callFileRead('/var/run/antilag.json').catch(function() { return ''; })
-        ]).then(function(results) {
-            var fileExists = !!(results[1]);   /* non-empty type = file exists */
-            var raw        = results[2] || '';
-            var uciEnabled = getUciEnabled();
-            var node       = resolveState(fileExists, raw, uciEnabled);
+        uci.load('antilag').then(function() {
+            var sections = uci.sections('antilag', 'antilag');
+            var sids = [];
+            for (var i = 0; i < sections.length; i++)
+                sids.push(sections[i]['.name']);
 
-            while (container.firstChild)
-                container.removeChild(container.firstChild);
-            container.appendChild(node);
+            return Promise.all(sids.map(fetchInstance)).then(function(results) {
+                while (container.firstChild)
+                    container.removeChild(container.firstChild);
+
+                if (!results.length)
+                    container.appendChild(E('div', { 'class': 'cbi-section' },
+                        E('p', {}, _('No antilag instances configured.'))));
+
+                results.forEach(function(inst) {
+                    container.appendChild(buildInstanceBlock(inst));
+                });
+            });
         });
     }
 
@@ -256,18 +274,11 @@ return baseclass.extend({
     title: _('Antilag'),
 
     load: function() {
-        return Promise.all([
-            uci.load('antilag'),
-            callFileStat('/var/run/antilag.json').catch(function() { return ''; }),
-            callFileRead('/var/run/antilag.json').catch(function() { return ''; })
-        ]);
+        return uci.load('antilag');
     },
 
-    render: function(data) {
-        var fileExists = !!(data[1]);
-        var raw        = data[2] || '';
-        var uciEnabled = getUciEnabled();
-        var container  = E('div', {}, [ resolveState(fileExists, raw, uciEnabled) ]);
+    render: function() {
+        var container = E('div', {});
 
         var pollInterval = startPoller(container);
 
