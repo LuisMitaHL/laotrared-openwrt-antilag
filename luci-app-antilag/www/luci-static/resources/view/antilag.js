@@ -118,13 +118,22 @@ return view.extend({
             return opt;
         }
 
-        /* ── Grid summary columns (also editable in the modal) ── */
+        /* ── Grid summary columns ──────────────────────────────
+         *
+         * These core options are deliberately left at the default
+         * `modalonly = null`, which makes LuCI render them as read-only
+         * text previews in the grid table AND as editable widgets in the
+         * instance modal.  It is essential that `mode` is part of the
+         * modal: the dynamic-only options below use `depends('mode',
+         * 'dynamic')`, and LuCI resolves dependencies within the modal's
+         * own form map.  Marking these `modalonly = false` would remove
+         * them from the modal and silently hide every dependent option.
+         */
         o = s.taboption('general', form.Flag, 'enabled', _('Enable'),
             _('Master switch for this instance. When off, the daemon does not ' +
               'start and no CAKE qdisc is installed for this WAN pair.'));
         o.default = '0';
         o.rmempty = false;
-        o.modalonly = false;
 
         o = s.taboption('general', form.ListValue, 'mode', _('Mode'),
             _('<strong>Dynamic</strong> (default): continuously measures latency ' +
@@ -139,13 +148,11 @@ return view.extend({
         o.value('dynamic', _('Dynamic – adaptive CAKE (OWD-driven)'));
         o.value('static',  _('Static – fixed target rate (sqm-scripts style)'));
         o.rmempty = false;
-        o.modalonly = false;
 
         o = s.taboption('general', form.Value, 'ul_if', _('Upload Interface'),
             _('WAN-facing interface for egress shaping (e.g. <code>wan1</code>). ' +
               'Must be unique per instance.'));
         o.rmempty = false;
-        o.modalonly = false;
 
         o = s.taboption('general', form.Value, 'base_dl_shaper_rate_kbps',
             _('Base Download Rate (kbps)'),
@@ -159,7 +166,6 @@ return view.extend({
               'shaping target.'));
         o.datatype = 'uinteger';
         o.default  = '20000';
-        o.modalonly = false;
 
         o = s.taboption('general', form.Value, 'base_ul_shaper_rate_kbps',
             _('Base Upload Rate (kbps)'),
@@ -173,7 +179,6 @@ return view.extend({
               'shaping target.'));
         o.datatype = 'uinteger';
         o.default  = '20000';
-        o.modalonly = false;
 
         /* ════════════════════════════════════════════════════
          * General tab (modal)
@@ -656,7 +661,7 @@ return view.extend({
             var statusInner = E('div', {});
             var status = E('div', { 'class': 'cbi-section' }, [
                 E('h3', {}, _('Live Status')),
-                antilagStatus.render(statusInner)
+                antilagStatus.render(statusInner, { tinToggle: true })
             ]);
 
             return E('div', {}, [ bar, status, formNode ]);

@@ -196,7 +196,7 @@ The LuCI Overview page displays a live status widget that polls every 3 seconds,
 | OWD DL / UL Δ | One-way delay delta above baseline — turns red above +10ms |
 | Uptime | Time since daemon started |
 
-Below the status row, the widget shows **live per-tin CAKE statistics** (the netlink equivalent of `tc -s qdisc show`) for the download (IFB) and upload (WAN) qdiscs, one table per direction:
+Below the status row, the widget can show **live per-tin CAKE statistics** (the netlink equivalent of `tc -s qdisc show`) for the download (IFB) and upload (WAN) qdiscs, one table per direction. These tables are **hidden by default** — enable them with the *Show CAKE tin statistics* checkbox on the Services → Antilag page (the choice is remembered per browser):
 
 | Field | Description |
 | :--- | :--- |

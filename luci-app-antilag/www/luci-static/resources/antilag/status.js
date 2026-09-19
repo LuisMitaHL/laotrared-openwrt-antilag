@@ -7,10 +7,14 @@
  * antilag/status.js  –  shared Antilag live-status renderer.
  *
  * Used by both the LuCI Overview widget (status/include/75_antilag.js)
- * and the Antilag settings page.  render(container) fills <container>
- * with one status block per UCI 'antilag' section and polls every
- * POLL_MS.  A MutationObserver stops the poller when the container
+ * and the Antilag settings page.  render(container, options) fills
+ * <container> with one status block per UCI 'antilag' section and polls
+ * every POLL_MS.  A MutationObserver stops the poller when the container
  * leaves the DOM (LuCI swaps status includes / page nodes).
+ *
+ * The per-tin CAKE tables are opt-in: `options.tinToggle` (set only by
+ * the Antilag settings page) renders the checkbox controlling them, and
+ * the choice is remembered per browser in localStorage.
  *
  * Multi-instance: every UCI 'antilag' section runs its own daemon
  * process with its own status file (/var/run/antilag-<section>.json).
@@ -18,7 +22,7 @@
  * by `antilag apply` and rendered as a compact fixed-rate block.
  *
  * Per-instance state logic (in priority order):
- *   1. status file exists and parses   → stats + tin tables (dynamic)
+ *   1. status file exists and parses   → stats (+ optional tin tables) (dynamic)
  *                                        or compact block (static)
  *   2. file exists but content invalid → red parse-error row (never silent)
  *   3. file exists but unreadable      → red unreadable row (never silent)
@@ -39,6 +43,26 @@ var callFileStat = rpc.declare({
     params: [ 'path' ],
     expect: { type: '' }
 });
+
+/*
+ * ── CAKE tin statistics visibility ──────────────────────────────
+ *
+ * The per-tin tables are large, so they are hidden by default.  The
+ * preference is a per-browser display setting (not a UCI option):
+ * it is toggled by the checkbox shown only on the Services → Antilag
+ * page and persists in localStorage across page loads.
+ */
+var TIN_PREF_KEY = 'antilag.showCakeTins';
+
+function showCakeTins() {
+    try { return window.localStorage.getItem(TIN_PREF_KEY) === '1'; }
+    catch (e) { return false; }
+}
+
+function setShowCakeTins(on) {
+    try { window.localStorage.setItem(TIN_PREF_KEY, on ? '1' : '0'); }
+    catch (e) { /* private mode / storage disabled – keep in-memory default */ }
+}
 
 /* ── Formatting helpers ───────────────────────────────────────── */
 
@@ -278,7 +302,7 @@ function fetchInstance(sid) {
     });
 }
 
-function buildInstanceBlock(inst) {
+function buildInstanceBlock(inst, withTins) {
     var st = null;
     try { if (inst.raw) st = JSON.parse(inst.raw); } catch (e) {}
 
@@ -300,15 +324,22 @@ function buildInstanceBlock(inst) {
 
         parts.push(buildStatsTable(st));
 
-        if (st.cake_dl && st.cake_dl.tin_cnt)
-            parts.push(buildTinTable(_('Download') + ' (' + (st.dl_if || '') + ')', st.cake_dl));
-        if (st.cake_ul && st.cake_ul.tin_cnt)
-            parts.push(buildTinTable(_('Upload') + ' (' + (st.ul_if || '') + ')', st.cake_ul));
+        /*
+         * The per-tin CAKE tables are opt-in: they dominate the status
+         * block, so they are only rendered when the user enabled the
+         * "Show CAKE tin statistics" checkbox on the Antilag page.
+         */
+        if (withTins) {
+            if (st.cake_dl && st.cake_dl.tin_cnt)
+                parts.push(buildTinTable(_('Download') + ' (' + (st.dl_if || '') + ')', st.cake_dl));
+            if (st.cake_ul && st.cake_ul.tin_cnt)
+                parts.push(buildTinTable(_('Upload') + ' (' + (st.ul_if || '') + ')', st.cake_ul));
 
-        if (parts.length === 1)
-            parts.push(E('div', {
-                'style': 'color:var(--text-color-medium,#555);margin-top:0.5em'
-            }, _('CAKE per-tin statistics unavailable (qdisc not up).')));
+            if (parts.length === 1)
+                parts.push(E('div', {
+                    'style': 'color:var(--text-color-medium,#555);margin-top:0.5em'
+                }, _('CAKE per-tin statistics unavailable (qdisc not up).')));
+        }
 
         for (var i = 0; i < parts.length; i++)
             wrap.appendChild(parts[i]);
@@ -349,32 +380,80 @@ function startPoller(container) {
                     container.appendChild(E('div', { 'class': 'cbi-section' },
                         E('p', {}, _('No antilag instances configured.'))));
 
+                var withTins = showCakeTins();
                 results.forEach(function(inst) {
-                    container.appendChild(buildInstanceBlock(inst));
+                    container.appendChild(buildInstanceBlock(inst, withTins));
                 });
             });
         });
     }
 
     poll();
-    return setInterval(poll, POLL_MS);
+
+    return {
+        interval: setInterval(poll, POLL_MS),
+        refresh:  poll
+    };
 }
 
 return baseclass.extend({
     /*
-     * render(container) – populate <container> with the per-instance
-     * status blocks and start the poll loop.  Polling stops
-     * automatically once the container is removed from the DOM.
+     * render(container, options) – populate <container> with the
+     * per-instance status blocks and start the poll loop.  Polling
+     * stops automatically once the container is removed from the DOM.
+     *
+     * options.tinToggle – when true, render the "Show CAKE tin
+     * statistics" checkbox above the status blocks.  Only the Antilag
+     * settings page opts in; the Overview widget never shows it.
      */
-    render: function(container) {
-        var pollInterval = startPoller(container);
+    render: function(container, options) {
+        options = options || {};
+
+        var poller, content = container;
+
+        if (options.tinToggle) {
+            var toggle = E('input', {
+                'type': 'checkbox',
+                'id': 'antilag-cake-tins-toggle',
+                'style': 'margin:0 0.5em 0 0;vertical-align:middle'
+            });
+            toggle.checked = showCakeTins();
+            toggle.addEventListener('change', function(ev) {
+                setShowCakeTins(ev.currentTarget.checked);
+                if (poller)
+                    poller.refresh();
+            });
+
+            container.appendChild(E('div', {
+                'class': 'cbi-section',
+                'style': 'margin-bottom:1em'
+            }, [
+                E('label', {
+                    'for': 'antilag-cake-tins-toggle',
+                    'style': 'cursor:pointer'
+                }, [
+                    toggle,
+                    E('strong', {}, _('Show CAKE tin statistics'))
+                ]),
+                E('div', {
+                    'class': 'cbi-section-descr'
+                }, _('Display the live per-tin CAKE qdisc counters (threshold, ' +
+                     'sent, dropped, ECN marks, backlog and average delay) ' +
+                     'below each instance. Hidden by default.'))
+            ]));
+
+            content = E('div', {});
+            container.appendChild(content);
+        }
+
+        poller = startPoller(content);
 
         var observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(m) {
                 m.removedNodes.forEach(function(node) {
                     if (node === container ||
                         (node.contains && node.contains(container))) {
-                        clearInterval(pollInterval);
+                        clearInterval(poller.interval);
                         observer.disconnect();
                     }
                 });

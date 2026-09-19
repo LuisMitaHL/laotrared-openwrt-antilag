@@ -228,6 +228,12 @@ msgstr ""
 msgid "Disabled"
 msgstr ""
 
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:390
+msgid ""
+"Display the live per-tin CAKE qdisc counters (threshold, sent, dropped, ECN "
+"marks, backlog and average delay) below each instance. Hidden by default."
+msgstr ""
+
 #: luci-app-antilag/www/luci-static/resources/antilag/status.js:257
 msgid "Download"
 msgstr ""
@@ -767,6 +773,10 @@ msgstr ""
 
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:602
 msgid "Service Control"
+msgstr ""
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:385
+msgid "Show CAKE tin statistics"
 msgstr ""
 
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:567

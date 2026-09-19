@@ -285,6 +285,15 @@ msgstr ""
 msgid "Disabled"
 msgstr "Desactivado"
 
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:390
+msgid ""
+"Display the live per-tin CAKE qdisc counters (threshold, sent, dropped, ECN "
+"marks, backlog and average delay) below each instance. Hidden by default."
+msgstr ""
+"Muestra los contadores CAKE en vivo por tin (umbral, enviados, descartados, "
+"marcas ECN, backlog y retardo medio) debajo de cada instancia. Ocultos por "
+"defecto."
+
 #: luci-app-antilag/www/luci-static/resources/antilag/status.js:257
 msgid "Download"
 msgstr "Bajada"
@@ -930,6 +939,10 @@ msgstr "El servicio %s se ha realizado correctamente."
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:602
 msgid "Service Control"
 msgstr "Control del servicio"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:385
+msgid "Show CAKE tin statistics"
+msgstr "Mostrar estadísticas CAKE por tin"
 
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:567
 msgid "Sliding window size for counting missed-response events per reflector."
