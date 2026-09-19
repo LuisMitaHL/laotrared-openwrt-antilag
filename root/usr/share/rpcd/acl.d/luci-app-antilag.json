@@ -1,10 +1,10 @@
 {
-    "luci-app-darkmoon": {
-        "description": "Grant access for luci-app-darkmoon",
+    "luci-app-antilag": {
+        "description": "Grant access for luci-app-antilag",
         "read": {
-            "uci": [ "darkmoon" ],
+            "uci": [ "antilag" ],
             "file": {
-                "/var/run/darkmoon.json": [ "read", "stat" ]
+                "/var/run/antilag.json": [ "read", "stat" ]
             },
             "ubus": {
                 "file":    [ "read", "stat" ],
@@ -13,7 +13,7 @@
             }
         },
         "write": {
-            "uci": [ "darkmoon" ],
+            "uci": [ "antilag" ],
             "ubus": {
                 "luci": [ "setInitAction" ]
             }

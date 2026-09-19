@@ -45,15 +45,15 @@ jobs:
         uses: openwrt/gh-action-sdk@main
         env:
           ARCH: ${{ matrix.arch }}-${{ matrix.version }}
-          PACKAGES: darkmoon
+          PACKAGES: antilag
           IGNORE_ERRORS: 0 
           
       - name: Collect Packages
         run: |
           mkdir -p dist
           
-          # Find packages with "darkmoon" and copy them with arch prefix
-          for file in $(find bin/packages/ -type f \( -name "*darkmoon*.apk" -o -name "*darkmoon*.ipk" \)); do
+          # Find packages with "antilag" and copy them with arch prefix
+          for file in $(find bin/packages/ -type f \( -name "*antilag*.apk" -o -name "*antilag*.ipk" \)); do
             filename=$(basename "$file")
             cp "$file" "dist/${{ matrix.arch }}_${filename}"
           done
@@ -61,7 +61,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: darkmoon-${{ matrix.arch }}-${{ matrix.version }}
+          name: antilag-${{ matrix.arch }}-${{ matrix.version }}
           path: dist/*
           
       - name: Add to GitHub Release

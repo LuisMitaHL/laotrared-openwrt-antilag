@@ -4,10 +4,10 @@
 'require uci';
 
 /*
- * 75_darkmoon.js  –  Darkmoon status widget for the LuCI Overview page.
+ * 75_antilag.js  –  Antilag status widget for the LuCI Overview page.
  *
  * State logic (in priority order):
- *   1. /var/run/darkmoon.json exists and parses → daemon is running → show stats table
+ *   1. /var/run/antilag.json exists and parses → daemon is running → show stats table
  *   2. UCI enabled = 1 but no status file     → enabled but not started / crashed
  *   3. UCI enabled = 0                         → disabled
  */
@@ -69,7 +69,7 @@ function buildStatsTable(st) {
     var owdDlStyle = (st.avg_owd_dl_ms10 > 100) ? 'color:#c00' : 'color:#555';
     var owdUlStyle = (st.avg_owd_ul_ms10 > 100) ? 'color:#c00' : 'color:#555';
 
-    return E('table', { 'class': 'table', 'id': 'darkmoon_status_table' }, [
+    return E('table', { 'class': 'table', 'id': 'antilag_status_table' }, [
         E('tr', { 'class': 'tr table-titles' }, [
             E('th', { 'class': 'th' }, _('Status')),
             E('th', { 'class': 'th' }, _('DL Shaped')),
@@ -98,7 +98,7 @@ function buildStatsTable(st) {
 }
 
 function buildSimpleTable(text, color) {
-    return E('table', { 'class': 'table', 'id': 'darkmoon_status_table' }, [
+    return E('table', { 'class': 'table', 'id': 'antilag_status_table' }, [
         E('tr', { 'class': 'tr table-titles' }, [
             E('th', { 'class': 'th' }, _('Status'))
         ]),
@@ -129,7 +129,7 @@ function resolveState(fileExists, raw, uciEnabled) {
 /* ── UCI enabled check ───────────────────────────────────────── */
 
 function getUciEnabled() {
-    var sections = uci.sections('darkmoon', 'darkmoon');
+    var sections = uci.sections('antilag', 'antilag');
     for (var i = 0; i < sections.length; i++) {
         if (sections[i].enabled === '1')
             return true;
@@ -144,9 +144,9 @@ var POLL_MS = 2500;
 function startPoller(container) {
     function poll() {
         Promise.all([
-            uci.load('darkmoon'),
-            callFileStat('/var/run/darkmoon.json').catch(function() { return ''; }),
-            callFileRead('/var/run/darkmoon.json').catch(function() { return ''; })
+            uci.load('antilag'),
+            callFileStat('/var/run/antilag.json').catch(function() { return ''; }),
+            callFileRead('/var/run/antilag.json').catch(function() { return ''; })
         ]).then(function(results) {
             var fileExists = !!(results[1]);   /* non-empty type = file exists */
             var raw        = results[2] || '';
@@ -166,13 +166,13 @@ function startPoller(container) {
 /* ── Widget ──────────────────────────────────────────────────── */
 
 return baseclass.extend({
-    title: _('Darkmoon'),
+    title: _('Antilag'),
 
     load: function() {
         return Promise.all([
-            uci.load('darkmoon'),
-            callFileStat('/var/run/darkmoon.json').catch(function() { return ''; }),
-            callFileRead('/var/run/darkmoon.json').catch(function() { return ''; })
+            uci.load('antilag'),
+            callFileStat('/var/run/antilag.json').catch(function() { return ''; }),
+            callFileRead('/var/run/antilag.json').catch(function() { return ''; })
         ]);
     },
 

@@ -1,4 +1,4 @@
-# darkmoon
+# antilag
 
 A lightweight, CPU-efficient C rewrite of [cake-autorate](https://github.com/lynxthecat/cake-autorate) for OpenWrt. Designed for routers where maximizing CPU efficiency is a priority.
 
@@ -8,7 +8,7 @@ The original [cake-autorate](https://github.com/lynxthecat/cake-autorate) create
 
 While the algorithm is excellent at mitigating bufferbloat, running a complex bash script that continuously spawns new processes and subshells can consume a significant amount of CPU on lower-end routers.
 
-**darkmoon** resolves this by reimplementing the exact same algorithm as a native C binary and OpenWrt procd service. It drastically reduces CPU overhead while maintaining identical adaptive traffic-shaping behavior.
+**antilag** resolves this by reimplementing the exact same algorithm as a native C binary and OpenWrt procd service. It drastically reduces CPU overhead while maintaining identical adaptive traffic-shaping behavior.
 
 *All credit for the original algorithm, math, and concept goes to [@lynxthecat](https://github.com/lynxthecat) and the contributors of the original repository.*
 
@@ -57,38 +57,38 @@ apk add libubox libuci
 Download the appropriate `.apk` for your architecture from the Releases page, upload it to your router, and install:
 
 ```sh
-apk add --allow-untrusted darkmoon_*.apk
+apk add --allow-untrusted antilag_*.apk
 ```
 
 Enable and start the service:
 
 ```sh
-/etc/init.d/darkmoon enable
-/etc/init.d/darkmoon start
+/etc/init.d/antilag enable
+/etc/init.d/antilag start
 ```
 
 ### From Source (OpenWrt SDK)
 
 ```sh
-make package/darkmoon/compile V=s
+make package/antilag/compile V=s
 ```
 
 ---
 
 ## Configuration
 
-The recommended way to configure darkmoon is through the LuCI web interface at **Services → Darkmoon**. Clicking Save & Apply will automatically reload the daemon.
+The recommended way to configure antilag is through the LuCI web interface at **Services → Antilag**. Clicking Save & Apply will automatically reload the daemon.
 
 Alternatively, edit the config file directly over SSH:
 
 ```sh
-vi /etc/config/darkmoon
+vi /etc/config/antilag
 ```
 
 The minimum required options are the interface names and rate limits. Ensure `dl_if` and `ul_if` match your router's actual interfaces — for typical setups, download traffic arrives on an IFB interface and upload on the physical WAN interface.
 
 ```
-config darkmoon 'primary'
+config antilag 'primary'
     option enabled                  '1'
     option dl_if                    'ifb4wan'
     option ul_if                    'wan'
@@ -124,7 +124,7 @@ The LuCI Overview page displays a live status widget that polls every 2.5 second
 | OWD DL / UL Δ | One-way delay delta above baseline — turns red above +10ms |
 | Uptime | Time since daemon started |
 
-The daemon writes `/var/run/darkmoon.json` every ~200ms. The file is removed on clean shutdown so the widget immediately reflects stopped state.
+The daemon writes `/var/run/antilag.json` every ~200ms. The file is removed on clean shutdown so the widget immediately reflects stopped state.
 
 ---
 
@@ -133,28 +133,35 @@ The daemon writes `/var/run/darkmoon.json` every ~200ms. The file is removed on 
 Confirm the service is running under procd:
 
 ```sh
-ubus call service list '{"name":"darkmoon"}'
+ubus call service list '{"name":"antilag"}'
 ```
 
 Watch the daemon adjust bandwidth in real time:
 
 ```sh
-logread -f -e darkmoon
+logread -f -e antilag
 ```
 
 Inspect the live status JSON directly:
 
 ```sh
-cat /var/run/darkmoon.json
+cat /var/run/antilag.json
 ```
 
 ---
 
 ## Credits
 
-Original algorithm & concept: [@lynxthecat](https://github.com/lynxthecat) — [cake-autorate](https://github.com/lynxthecat/cake-autorate)
+**antilag** is a rebrand of **darkmoon** for Laotrared. It carries no functional
+changes over the project it forks — all credit for the design and code goes to
+the original projects:
 
-C rewrite & OpenWrt integration: kamikaonashi
+| Project | Author | Repository | Package names |
+| :--- | :--- | :--- | :--- |
+| [cake-autorate](https://github.com/lynxthecat/cake-autorate) | [@lynxthecat](https://github.com/lynxthecat) | https://github.com/lynxthecat/cake-autorate | `cake-autorate` (bash service) — original OWD algorithm, math & concept |
+| [openwrt-package-darkmoon](https://github.com/kamikaonashi/openwrt-package-darkmoon) | [kamikaonashi](https://github.com/kamikaonashi) | https://github.com/kamikaonashi/openwrt-package-darkmoon | `darkmoon`, `luci-app-darkmoon` — C rewrite & OpenWrt/LuCI integration this fork is based on |
+| [timestamp-reflectors](https://github.com/tievolu/timestamp-reflectors) | [tievolu](https://github.com/tievolu) | https://github.com/tievolu/timestamp-reflectors | Reflector list recommended for ICMP Timestamp mode |
+| [antilag](https://github.com/LuisMitaHL/laotrared-openwrt-antilag) | Laotrared | https://github.com/LuisMitaHL/laotrared-openwrt-antilag | `antilag`, `luci-app-antilag` — this rebrand |
 
 ## License
 

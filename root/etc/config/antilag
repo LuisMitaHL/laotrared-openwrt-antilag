@@ -1,4 +1,4 @@
-config darkmoon 'primary'
+config antilag 'primary'
     # ── Enable / disable ─────────────────────────────────────
     option enabled '0'
 
@@ -110,7 +110,7 @@ config darkmoon 'primary'
     # Leave blank to use the list above.
     #
     # Example:
-    #   option reflectors_file '/etc/darkmoon/timestamp-reflectors.txt'
+    #   option reflectors_file '/etc/antilag/timestamp-reflectors.txt'
     option reflectors_file ''
 
     # ── CAKE qdisc options ───────────────────────────────────

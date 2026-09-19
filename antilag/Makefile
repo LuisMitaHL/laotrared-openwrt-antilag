@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME    := darkmoon
+PKG_NAME    := antilag
 PKG_VERSION := 1.0.0
 PKG_RELEASE := 1
 
@@ -13,16 +13,16 @@ include $(INCLUDE_DIR)/package.mk
 # $(CURDIR) is always the package directory regardless of SDK nesting depth.
 PKG_ROOT := $(CURDIR)/..
 
-define Package/darkmoon
+define Package/antilag
   SECTION  := net
   CATEGORY := Network
-  TITLE    := Darkmoon
+  TITLE    := Antilag
   DEPENDS  := +libubox +libuci +kmod-ifb +kmod-sched-cake \
               +kmod-sched-core +luci-base \
               +CAKE_MQ:kmod-sched-cake-mq
 endef
 
-define Package/darkmoon/description
+define Package/antilag/description
   Adaptive CAKE qdisc bandwidth controller for OpenWrt, with integrated
   LuCI web interface.  Standalone - no sqm-scripts required.
 
@@ -30,20 +30,20 @@ define Package/darkmoon/description
   Manages the full IFB + CAKE plumbing lifecycle via netlink.
 endef
 
-define Package/darkmoon/postinst
+define Package/antilag/postinst
 #!/bin/sh
 [ -n "$${IPKG_INSTROOT}" ] && exit 0
 /etc/init.d/rpcd reload
-/etc/init.d/darkmoon enable
-/etc/init.d/darkmoon start
+/etc/init.d/antilag enable
+/etc/init.d/antilag start
 exit 0
 endef
 
-define Package/darkmoon/prerm
+define Package/antilag/prerm
 #!/bin/sh
 [ -n "$${IPKG_INSTROOT}" ] && exit 0
-/etc/init.d/darkmoon stop
-/etc/init.d/darkmoon disable
+/etc/init.d/antilag stop
+/etc/init.d/antilag disable
 exit 0
 endef
 
@@ -63,40 +63,40 @@ define Build/Compile
 		CFLAGS="$(TARGET_CFLAGS) -O2 -pipe -I$(STAGING_DIR)/usr/include" \
 		LDFLAGS="$(TARGET_LDFLAGS) -L$(STAGING_DIR)/usr/lib -lubox -luci"
 	$(TARGET_CROSS)strip --strip-unneeded \
-		$(PKG_BUILD_DIR)/darkmoon
+		$(PKG_BUILD_DIR)/antilag
 endef
 
-define Package/darkmoon/install
+define Package/antilag/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/darkmoon $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/antilag $(1)/usr/sbin/
 
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(PKG_ROOT)/root/etc/init.d/darkmoon \
+	$(INSTALL_BIN) $(PKG_ROOT)/root/etc/init.d/antilag \
 		$(1)/etc/init.d/
 
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) $(PKG_ROOT)/root/etc/config/darkmoon \
+	$(INSTALL_CONF) $(PKG_ROOT)/root/etc/config/antilag \
 		$(1)/etc/config/
 
 	$(INSTALL_DIR) $(1)/usr/share/luci/menu.d
 	$(INSTALL_DATA) \
-		$(PKG_ROOT)/root/usr/share/luci/menu.d/luci-app-darkmoon.json \
+		$(PKG_ROOT)/root/usr/share/luci/menu.d/luci-app-antilag.json \
 		$(1)/usr/share/luci/menu.d/
 
 	$(INSTALL_DIR) $(1)/usr/share/rpcd/acl.d
 	$(INSTALL_DATA) \
-		$(PKG_ROOT)/root/usr/share/rpcd/acl.d/luci-app-darkmoon.json \
+		$(PKG_ROOT)/root/usr/share/rpcd/acl.d/luci-app-antilag.json \
 		$(1)/usr/share/rpcd/acl.d/
 
 	$(INSTALL_DIR) $(1)/www/luci-static/resources/view
 	$(INSTALL_DATA) \
-		$(PKG_ROOT)/luci-app-darkmoon/www/luci-static/resources/view/darkmoon.js \
+		$(PKG_ROOT)/luci-app-antilag/www/luci-static/resources/view/antilag.js \
 		$(1)/www/luci-static/resources/view/
 
 	$(INSTALL_DIR) $(1)/www/luci-static/resources/view/status/include
 	$(INSTALL_DATA) \
-		$(PKG_ROOT)/luci-app-darkmoon/www/luci-static/resources/view/status/include/75_darkmoon.js \
+		$(PKG_ROOT)/luci-app-antilag/www/luci-static/resources/view/status/include/75_antilag.js \
 		$(1)/www/luci-static/resources/view/status/include/
 endef
 
-$(eval $(call BuildPackage,darkmoon))
+$(eval $(call BuildPackage,antilag))

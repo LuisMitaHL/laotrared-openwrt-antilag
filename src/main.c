@@ -210,7 +210,7 @@ static void set_nonblocking(int fd)
 }
 
 /* ────────────────────────────────────────────────────────────── */
-/*  Runtime status file  (/var/run/darkmoon.json)                  */
+/*  Runtime status file  (/var/run/antilag.json)                  */
 /*                                                                */
 /*  Written on every rate-monitor tick (~200 ms).                 */
 /*  Read by the LuCI Overview widget via file.read RPC.           */
@@ -238,8 +238,8 @@ static const char *state_str(int s)
 
 static void write_status_file(autorate_t *ar)
 {
-    static const char *path     = "/var/run/darkmoon.json";
-    static const char *path_tmp = "/var/run/darkmoon.json.tmp";
+    static const char *path     = "/var/run/antilag.json";
+    static const char *path_tmp = "/var/run/antilag.json.tmp";
 
     FILE *f = fopen(path_tmp, "w");
     if (!f)
@@ -1358,7 +1358,7 @@ int main(int argc, char *argv[])
 {
     const char *section = (argc > 1) ? argv[1] : "primary";
 
-    openlog("cake-autorate", LOG_PID | LOG_NDELAY, LOG_DAEMON);
+    openlog("antilag", LOG_PID | LOG_NDELAY, LOG_DAEMON);
 
     autorate_t ar;
     memset(&ar, 0, sizeof(ar));
@@ -1368,7 +1368,7 @@ int main(int argc, char *argv[])
 
     /* ── Load configuration ──────────────────────────────────── */
     if (config_load(section, &ar.cfg) < 0) {
-        fprintf(stderr, "cake-autorate: failed to load UCI config '%s'\n",
+        fprintf(stderr, "antilag: failed to load UCI config '%s'\n",
                 section);
         syslog(LOG_ERR, "failed to load UCI config section '%s'", section);
         return 1;
@@ -1473,7 +1473,7 @@ int main(int argc, char *argv[])
     stop_pinger(&ar);
 
     /* Remove status file so LuCI shows the service as stopped */
-    unlink("/var/run/darkmoon.json");
+    unlink("/var/run/antilag.json");
 
 err_teardown:
     /*

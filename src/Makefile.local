@@ -4,7 +4,7 @@ LDFLAGS ?= -lubox -luci
 
 SRCS = main.c config.c rate_monitor.c tc_netlink.c
 OBJS = $(SRCS:.c=.o)
-BIN  = darkmoon
+BIN  = antilag
 
 .PHONY: all clean
 

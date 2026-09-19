@@ -232,7 +232,7 @@ int config_load(const char *section_name, cake_config_t *cfg)
     ctx = uci_alloc_context();
     if (!ctx) return -1;
 
-    if (uci_load(ctx, "darkmoon", &pkg) != UCI_OK) {
+    if (uci_load(ctx, "antilag", &pkg) != UCI_OK) {
         uci_free_context(ctx);
         return -1;
     }

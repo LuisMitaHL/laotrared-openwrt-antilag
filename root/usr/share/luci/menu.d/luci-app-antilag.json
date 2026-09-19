@@ -1,0 +1,10 @@
+{
+    "admin/services/antilag": {
+        "title": "Antilag",
+        "order": 60,
+        "action": {
+            "type": "view",
+            "path": "antilag"
+        }
+    }
+}

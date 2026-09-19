@@ -33,7 +33,7 @@ function makeServiceButton(label, style, action) {
         'click': function(ev) {
             var btn = ev.currentTarget;
             btn.disabled = true;
-            return callInitAction('darkmoon', action)
+            return callInitAction('antilag', action)
                 .then(function(res) {
                     btn.disabled = false;
                     ui.addNotification(null,
@@ -63,7 +63,7 @@ return view.extend({
      */
     load: function() {
         return Promise.all([
-            uci.load('darkmoon'),
+            uci.load('antilag'),
             callFsStat('/sys/module/sch_cake_mq').catch(function() { return ''; })
         ]);
     },
@@ -82,7 +82,7 @@ return view.extend({
     handleSaveApply: function(ev, mode) {
         return this.handleSave(ev).then(function() {
             return ui.changes.apply(mode).then(function() {
-                return callInitAction('darkmoon', 'restart')
+                return callInitAction('antilag', 'restart')
                     .catch(function() { /* ignore if service not present yet */ });
             });
         });
@@ -92,17 +92,17 @@ return view.extend({
         var cakeMqAvailable = (data[1] !== '');
         var m, s, o;
 
-        m = new form.Map('darkmoon', _('Darkmoon'),
+        m = new form.Map('antilag', _('Antilag'),
             _('Adaptive CAKE shaper – automatically adjusts download and upload ' +
               'bandwidth based on measured one-way delay (OWD). ' +
               'Standalone operation: no sqm-scripts required.'));
 
         /* ── Per-instance configuration sections ───────────── */
-        uci.sections('darkmoon', 'darkmoon').forEach(function(section) {
+        uci.sections('antilag', 'antilag').forEach(function(section) {
             var sid   = section['.name'];
             var title = sid.charAt(0).toUpperCase() + sid.slice(1) + ' ' + _('Instance');
 
-            s = m.section(form.NamedSection, sid, 'darkmoon', title);
+            s = m.section(form.NamedSection, sid, 'antilag', title);
             s.addremove = false;
             s.anonymous = false;
 
@@ -322,7 +322,7 @@ return view.extend({
                   '<a href="https://github.com/tievolu/timestamp-reflectors" target="_blank">' +
                   'github.com/tievolu/timestamp-reflectors</a>.<br>' +
                   'Leave blank to use the Reflectors list.'));
-            o.placeholder = '/etc/darkmoon/timestamp-reflectors.txt';
+            o.placeholder = '/etc/antilag/timestamp-reflectors.txt';
 
             /* ── Pinger tuning ────────────────────────────── */
             o = s.taboption('advanced', form.Value, 'no_pingers',
@@ -522,7 +522,7 @@ return view.extend({
         /*
          * Inject the Start/Stop/Restart buttons directly into the DOM above
          * the settings form. Live status is shown on the Overview page only
-         * (via view/status/include/75_darkmoon.js).
+         * (via view/status/include/75_antilag.js).
          */
         return m.render().then(function(formNode) {
             var bar = E('div', { 'class': 'cbi-section' }, [
