@@ -3,6 +3,7 @@
 'require form';
 'require uci';
 'require ui';
+'require rpc';
 'require antilag.status as antilagStatus';
 
 var callInitAction = rpc.declare({
