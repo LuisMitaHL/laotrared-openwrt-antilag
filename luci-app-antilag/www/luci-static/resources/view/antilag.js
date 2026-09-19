@@ -3,6 +3,7 @@
 'require form';
 'require uci';
 'require ui';
+'require antilag.status as antilagStatus';
 
 var callInitAction = rpc.declare({
     object: 'luci',
@@ -513,9 +514,9 @@ return view.extend({
         o.datatype = 'float'; o.default = '10.0';
 
         /*
-         * Inject the Start/Stop/Restart buttons directly into the DOM above
-         * the instances grid. Live status is shown on the Overview page only
-         * (via view/status/include/75_antilag.js).
+         * Inject the Start/Stop/Restart buttons and the live status
+         * (same per-instance blocks as the Overview widget) above the
+         * instances grid.
          */
         return m.render().then(function(formNode) {
             var bar = E('div', { 'class': 'cbi-section' }, [
@@ -533,7 +534,13 @@ return view.extend({
                 ])
             ]);
 
-            return E('div', {}, [ bar, formNode ]);
+            var statusInner = E('div', {});
+            var status = E('div', { 'class': 'cbi-section' }, [
+                E('h3', {}, _('Live Status')),
+                antilagStatus.render(statusInner)
+            ]);
+
+            return E('div', {}, [ bar, status, formNode ]);
         });
     }
 });

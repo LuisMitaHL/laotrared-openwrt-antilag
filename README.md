@@ -168,6 +168,8 @@ Below the status row, the widget shows **live per-tin CAKE statistics** (the net
 
 The header line also shows CAKE's capacity estimate and qdisc memory usage. Statistics are read from the kernel via an `RTM_GETQDISC` dump; they are only available for plain `cake` qdiscs and are omitted while the qdisc is down.
 
+The same live status is also shown on the Services → Antilag page.
+
 The daemon writes `/var/run/antilag-<section>.json` every ~200ms, querying the kernel qdisc statistics on each tick. The file is removed on clean shutdown so the widget immediately reflects stopped state.
 
 ---

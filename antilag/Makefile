@@ -87,6 +87,11 @@ define Package/antilag/install
 		$(PKG_ROOT)/root/usr/share/rpcd/acl.d/luci-app-antilag.json \
 		$(1)/usr/share/rpcd/acl.d/
 
+	$(INSTALL_DIR) $(1)/www/luci-static/resources/antilag
+	$(INSTALL_DATA) \
+		$(PKG_ROOT)/luci-app-antilag/www/luci-static/resources/antilag/status.js \
+		$(1)/www/luci-static/resources/antilag/
+
 	$(INSTALL_DIR) $(1)/www/luci-static/resources/view
 	$(INSTALL_DATA) \
 		$(PKG_ROOT)/luci-app-antilag/www/luci-static/resources/view/antilag.js \
