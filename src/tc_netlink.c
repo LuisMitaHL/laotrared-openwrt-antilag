@@ -1140,16 +1140,29 @@ int tc_cake_get_stats(tc_nl_ctx_t *ctx, const char *iface,
     int found = 0;
     int done = 0;
 
+    /* TEMP DEBUG2: trace raw dump once per direction (first 2 calls). */
+    static int dbg_trace_n = 0;
+    int trace_this = (dbg_trace_n < 2);
+    if (trace_this)
+        dbg_trace_n++;
+
     uint8_t rbuf[CAKE_DUMP_BUF_SIZE];
     while (!done) {
         ssize_t n = recv(ctx->fd, rbuf, sizeof(rbuf), 0);
         if (n < (ssize_t)NLMSG_HDRLEN)
             break;
 
+        if (trace_this)
+            syslog(LOG_WARNING, "qdisc_stats DBG2: %s recv %zd bytes (want seq=%u):",
+                   iface, n, nlh->nlmsg_seq);
+
         struct nlmsghdr *h = (struct nlmsghdr *)rbuf;
         int rem = (int)n;
 
         for (; NLMSG_OK(h, rem); h = NLMSG_NEXT(h, rem)) {
+            if (trace_this)
+                syslog(LOG_WARNING, "qdisc_stats DBG2: %s msg type=%u seq=%u len=%u",
+                       iface, h->nlmsg_type, h->nlmsg_seq, h->nlmsg_len);
             /* Skip unsolicited notifications (link events etc.) */
             if (h->nlmsg_seq != nlh->nlmsg_seq)
                 continue;
