@@ -188,7 +188,10 @@ typedef struct {
     struct uloop_timeout if_up_timer;
     int                  link_up;        /* 1 = WAN interface is currently up */
 
-    /* Status file – written every rate-monitor tick for LuCI display */
+    /* Status file – written every rate-monitor tick for LuCI display.
+     * Per instance so multiple daemons (multi-WAN) don't collide. */
+    char status_path[96];       /* /var/run/antilag-<instance>.json     */
+    char status_tmp_path[104];  /* /var/run/antilag-<instance>.json.tmp */
     int64_t t_started_us;       /* monotonic start time for uptime   */
 } autorate_t;
 
@@ -210,7 +213,7 @@ static void set_nonblocking(int fd)
 }
 
 /* ────────────────────────────────────────────────────────────── */
-/*  Runtime status file  (/var/run/antilag.json)                  */
+/*  Runtime status file  (/var/run/antilag-<instance>.json)          */
 /*                                                                */
 /*  Written on every rate-monitor tick (~200 ms).                 */
 /*  Read by the LuCI Overview widget via file.read RPC.           */
@@ -284,9 +287,6 @@ static void fprint_qdisc_stats(FILE *f, const char *key,
 
 static void write_status_file(autorate_t *ar)
 {
-    static const char *path     = "/var/run/antilag.json";
-    static const char *path_tmp = "/var/run/antilag.json.tmp";
-
     /*
      * Query live qdisc statistics from the kernel for each direction.
      * Failures (qdisc not up yet, interface gone, foreign qdisc) simply
@@ -300,7 +300,7 @@ static void write_status_file(autorate_t *ar)
     if (ar->tc_nl && ar->ul_setup_done)
         have_ul = (tc_cake_get_stats(ar->tc_nl, ar->cfg.ul_if, &ul_stats) == 0);
 
-    FILE *f = fopen(path_tmp, "w");
+    FILE *f = fopen(ar->status_tmp_path, "w");
     if (!f)
         return;
 
@@ -354,7 +354,7 @@ static void write_status_file(autorate_t *ar)
     fprintf(f, "\n}\n");
 
     fclose(f);
-    rename(path_tmp, path);
+    rename(ar->status_tmp_path, ar->status_path);
 }
 
 /* ────────────────────────────────────────────────────────────── */
@@ -1072,6 +1072,25 @@ static int start_pinger(autorate_t *ar)
     if (ar->icmp_sock < 0)
         return -1;
 
+    /*
+     * Optional device binding (multi-WAN).  Without it, policy routing
+     * (mwan3) may steer reflector pings out an arbitrary WAN, corrupting
+     * the per-instance OWD measurement.  SO_BINDTODEVICE pins both the
+     * outgoing pings and the accepted replies to this interface.
+     */
+    if (ar->cfg.ping_bind_if[0]) {
+        struct ifreq ifr;
+        memset(&ifr, 0, sizeof(ifr));
+        snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s", ar->cfg.ping_bind_if);
+        if (setsockopt(ar->icmp_sock, SOL_SOCKET, SO_BINDTODEVICE,
+                       &ifr, sizeof(ifr)) < 0) {
+            syslog(LOG_ERR, "ping bind to '%s': %m", ar->cfg.ping_bind_if);
+            close(ar->icmp_sock);
+            ar->icmp_sock = -1;
+            return -1;
+        }
+    }
+
     set_nonblocking(ar->icmp_sock);
 
     ar->icmp_ufd.fd = ar->icmp_sock;
@@ -1417,6 +1436,25 @@ static void if_up_timer_cb(struct uloop_timeout *t)
 /* ────────────────────────────────────────────────────────────── */
 /*  main                                                          */
 /* ────────────────────────────────────────────────────────────── */
+/*
+ * instance_id_valid – UCI section names should already be limited to
+ * [A-Za-z0-9_], but the daemon receives the section name from argv and
+ * embeds it in a filesystem path.  Enforce the safe charset here so a
+ * crafted value can never escape /var/run.
+ */
+static int instance_id_valid(const char *id)
+{
+    if (!id || !*id)
+        return 0;
+    for (const char *p = id; *p; p++) {
+        char c = *p;
+        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+              (c >= '0' && c <= '9') || c == '_' || c == '-'))
+            return 0;
+    }
+    return 1;
+}
+
 int main(int argc, char *argv[])
 {
     const char *section = (argc > 1) ? argv[1] : "primary";
@@ -1441,6 +1479,17 @@ int main(int argc, char *argv[])
         syslog(LOG_INFO, "instance '%s' disabled, exiting", section);
         return 0;
     }
+
+    /* ── Per-instance status file paths ──────────────────────── */
+    if (!instance_id_valid(ar.cfg.instance_id)) {
+        syslog(LOG_ERR, "invalid section name '%s' – use [A-Za-z0-9_-] only",
+               ar.cfg.instance_id);
+        return 1;
+    }
+    snprintf(ar.status_path, sizeof(ar.status_path),
+             "/var/run/antilag-%s.json", ar.cfg.instance_id);
+    snprintf(ar.status_tmp_path, sizeof(ar.status_tmp_path),
+             "/var/run/antilag-%s.json.tmp", ar.cfg.instance_id);
 
     if (ar.cfg.no_pingers < 1) {
         syslog(LOG_ERR, "no_pingers must be >= 1");
@@ -1520,9 +1569,10 @@ int main(int argc, char *argv[])
         uloop_timeout_set(&ar.if_up_timer, if_up_ms);
     }
 
-    syslog(LOG_INFO, "started instance '%s' dl=%s ul=%s ping_type=%s",
+    syslog(LOG_INFO, "started instance '%s' dl=%s ul=%s ping_type=%s ping_bind=%s",
            section, ar.cfg.dl_if, ar.cfg.ul_if,
-           ar.cfg.ping_type == 1 ? "ICMP-timestamp(13)" : "ICMP-echo(8)");
+           ar.cfg.ping_type == 1 ? "ICMP-timestamp(13)" : "ICMP-echo(8)",
+           ar.cfg.ping_bind_if[0] ? ar.cfg.ping_bind_if : "(unbound)");
 
     uloop_run();
     uloop_done();
@@ -1536,7 +1586,7 @@ int main(int argc, char *argv[])
     stop_pinger(&ar);
 
     /* Remove status file so LuCI shows the service as stopped */
-    unlink("/var/run/antilag.json");
+    unlink(ar.status_path);
 
 err_teardown:
     /*

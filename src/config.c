@@ -98,6 +98,7 @@ void config_set_defaults(cake_config_t *cfg)
 
     snprintf(cfg->dl_if, sizeof(cfg->dl_if), "ifb-wan");
     snprintf(cfg->ul_if, sizeof(cfg->ul_if), "wan");
+    cfg->ping_bind_if[0] = '\0';          /* unbound; follow routing */
 
     cfg->enabled                 = 0;
     cfg->adjust_dl_shaper_rate   = 1;
@@ -249,6 +250,7 @@ int config_load(const char *section_name, cake_config_t *cfg)
     UCI_INT(enabled,                    "enabled");
     UCI_STR(dl_if,                      "dl_if");
     UCI_STR(ul_if,                      "ul_if");
+    UCI_STR(ping_bind_if,               "ping_bind_if");
     UCI_INT(adjust_dl_shaper_rate,      "adjust_dl_shaper_rate");
     UCI_INT(adjust_ul_shaper_rate,      "adjust_ul_shaper_rate");
     UCI_U32(min_dl_shaper_rate_kbps,    "min_dl_shaper_rate_kbps");

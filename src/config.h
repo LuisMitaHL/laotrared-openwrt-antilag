@@ -29,6 +29,16 @@ typedef struct {
     char     dl_if[MAX_IF_NAME];   /* IFB interface for DL shaping   */
     char     ul_if[MAX_IF_NAME];   /* WAN interface for UL shaping    */
 
+    /*
+     * ping_bind_if – bind the raw ICMP socket to this interface
+     * (SO_BINDTODEVICE).  Required for multi-WAN setups where policy
+     * routing (mwan3) would otherwise send reflector pings out an
+     * arbitrary WAN.  Empty = unbound (packets follow the routing
+     * table; correct for single-WAN).
+     * UCI option: ping_bind_if
+     */
+    char     ping_bind_if[MAX_IF_NAME];
+
     /* Adjust flags */
     int      adjust_dl_shaper_rate;
     int      adjust_ul_shaper_rate;
