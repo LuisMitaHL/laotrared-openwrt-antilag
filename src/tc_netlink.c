@@ -1060,8 +1060,10 @@ static int tc__parse_qdisc_msg(const struct nlmsghdr *nlh,
     const struct nlattr *stats2 = NULL;
 
     int rem = (int)NLMSG_PAYLOAD(nlh, sizeof(struct tcmsg));
+    /* Attributes start AFTER the tcmsg header (iproute2: NLMSG_DATA + ALIGN(sizeof tcmsg)). */
     const struct nlattr *a =
-        (const struct nlattr *)((const char *)NLMSG_DATA(nlh));
+        (const struct nlattr *)((const char *)NLMSG_DATA(nlh) +
+                                NLMSG_ALIGN(sizeof(struct tcmsg)));
 
     while (rem >= (int)sizeof(*a) &&
            a->nla_len >= NLA_HDRLEN && a->nla_len <= rem) {
