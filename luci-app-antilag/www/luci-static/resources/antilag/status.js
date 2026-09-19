@@ -17,8 +17,10 @@
  *
  * Per-instance state logic (in priority order):
  *   1. status file exists and parses   → daemon running → stats + tin tables
- *   2. UCI enabled = 1 but no file     → enabled but not started / crashed
- *   3. UCI enabled = 0                 → disabled
+ *   2. file exists but content invalid → red parse-error row (never silent)
+ *   3. file exists but unreadable      → red unreadable row (never silent)
+ *   4. UCI enabled = 1 but no file     → enabled but not started / crashed
+ *   5. UCI enabled = 0                 → disabled
  */
 
 var callFileRead = rpc.declare({
@@ -200,12 +202,43 @@ function instanceEnabled(sid) {
     return uci.get('antilag', sid, 'enabled') === '1';
 }
 
+/*
+ * decodePayload – normalize whatever `file read` resolved to into text.
+ * Shape varies by rpcd/LuCI version: raw file text (current rpc.js
+ * unwraps expect:{data} to the string), the full {data:...} object
+ * (no unwrap), or base64-encoded text (older rpcd). Raw JSON never
+ * matches the base64 alphabet ({, ", : are outside it), so the
+ * probe below only fires on real base64.
+ */
+function decodePayload(v) {
+    if (v == null)
+        return '';
+    if (typeof v === 'object')
+        v = v.data || '';
+    if (typeof v !== 'string')
+        return '';
+    var s = v.replace(/\s+/g, '');
+    if (s.length >= 8 && (s.length % 4) === 0 &&
+        /^[A-Za-z0-9+/]+={0,2}$/.test(s)) {
+        try {
+            var bin = atob(s);
+            var bytes = new Uint8Array(bin.length);
+            for (var i = 0; i < bin.length; i++)
+                bytes[i] = bin.charCodeAt(i) & 0xff;
+            if (typeof TextDecoder !== 'undefined')
+                return new TextDecoder().decode(bytes);
+            return bin;
+        } catch (e) { /* not base64 – fall through to raw */ }
+    }
+    return v;
+}
+
 function fetchInstance(sid) {
     return Promise.all([
         callFileStat(statusPath(sid)).catch(function() { return ''; }),
         callFileRead(statusPath(sid)).catch(function() { return ''; })
     ]).then(function(res) {
-        return { sid: sid, exists: !!res[0], raw: res[1] || '' };
+        return { sid: sid, exists: !!res[0], raw: decodePayload(res[1]) };
     });
 }
 
@@ -232,8 +265,10 @@ function buildInstanceBlock(inst) {
         for (var i = 0; i < parts.length; i++)
             wrap.appendChild(parts[i]);
     }
+    else if (inst.exists && inst.raw)
+        wrap.appendChild(buildSimpleTable(_('Running – status parse error'), '#c00'));
     else if (inst.exists)
-        wrap.appendChild(buildSimpleTable(_('Active'), '#1a7f1a'));
+        wrap.appendChild(buildSimpleTable(_('Running – status unreadable'), '#c00'));
     else if (instanceEnabled(inst.sid))
         wrap.appendChild(buildSimpleTable(_('Enabled – not running'), '#c07700'));
     else
