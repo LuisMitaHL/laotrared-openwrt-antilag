@@ -14,6 +14,25 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:130
+msgid ""
+"<strong>Dynamic</strong> (default): continuously measures latency against "
+"reflectors and adapts the download/upload shaper rates. Runs as a daemon."
+"<br><strong>Static</strong>: applies a fixed target download/upload rate "
+"exactly like sqm-scripts — no reflectors, no live changes, no daemon. The "
+"interface hotplug hook re-applies it whenever the WAN interface comes back "
+"up. Use this if you only want a fixed CAKE shaper or need to avoid "
+"conflicting with another QoS tool."
+msgstr ""
+"<strong>Dinámico</strong> (predeterminado): mide continuamente la latencia "
+"contra los reflectores y adapta las velocidades de modelado de bajada/"
+"subida. Se ejecuta como demonio.<br><strong>Estático</strong>: aplica una "
+"velocidad de bajada/subida fija, exactamente como sqm-scripts: sin "
+"reflectores, sin cambios en vivo y sin demonio. El hook hotplug de la "
+"interfaz lo vuelve a aplicar cada vez que la interfaz WAN vuelve a estar "
+"activa. Úsalo si solo quieres un modelador CAKE fijo o necesitas evitar "
+"conflictos con otra herramienta de QoS."
+
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:562
 msgid ""
 "A reflector is counted as non-responsive if it has not replied within this "
@@ -48,13 +67,17 @@ msgid ""
 "Adaptive CAKE shaper – automatically adjusts download and upload bandwidth "
 "based on measured one-way delay (OWD). Standalone operation: no sqm-scripts "
 "required. Each instance below shapes one WAN pair – add one instance per WAN "
-"for multi-WAN setups (e.g. with mwan3)."
+"for multi-WAN setups (e.g. with mwan3).<br>Set <strong>Mode</strong> to "
+"<strong>Static</strong> for a fixed target rate with no reflectors and no "
+"live changes (the sqm-scripts model)."
 msgstr ""
 "Modelador CAKE adaptativo: ajusta automáticamente el ancho de banda de "
 "bajada y subida según el retardo unidireccional (OWD) medido. Funciona de "
 "forma autónoma: no requiere sqm-scripts. Cada instancia modela un par de "
 "WAN; añade una instancia por WAN en configuraciones multi-WAN (p. ej. con "
-"mwan3)."
+"mwan3).<br>Establece el <strong>Modo</strong> en <strong>Estático</strong> "
+"para obtener una velocidad objetivo fija, sin reflectores y sin cambios en "
+"vivo (el modelo de sqm-scripts)."
 
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:155
 msgid "Adjust Download Shaper"
@@ -240,6 +263,10 @@ msgstr "Bajada modelada"
 msgid "DSCP Wash (Upload)"
 msgstr "Lavado de DSCP (subida)"
 
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:550
+msgid "Debug CAKE Statistics Reads"
+msgstr "Depurar lecturas de estadísticas de CAKE"
+
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:494
 msgid "Decay Refractory Period (ms)"
 msgstr "Periodo refractario de decaimiento (ms)"
@@ -270,6 +297,10 @@ msgstr "Interfaz de bajada"
 msgid "Dropped"
 msgstr "Descartados"
 
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:139
+msgid "Dynamic – adaptive CAKE (OWD-driven)"
+msgstr "Dinámico: CAKE adaptativo (según OWD)"
+
 #: luci-app-antilag/www/luci-static/resources/antilag/status.js:148
 msgid "ECN Marks"
 msgstr "Marcas ECN"
@@ -281,6 +312,10 @@ msgstr "Activar"
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:499
 msgid "Enable Sleep on Sustained Idle"
 msgstr "Activar reposo tras inactividad prolongada"
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:323
+msgid "Enabled – not applied (waiting for interface)"
+msgstr "Habilitado: sin aplicar (esperando la interfaz)"
 
 #: luci-app-antilag/www/luci-static/resources/antilag/status.js:274
 msgid "Enabled – not running"
@@ -297,6 +332,12 @@ msgid ""
 msgstr ""
 "Modo de aislamiento de reserva usado tanto para bajada como para subida "
 "cuando no se configuran las opciones específicas de dirección de abajo."
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:295
+msgid "Fixed-rate shaping active — no live metrics for static instances."
+msgstr ""
+"Modelado de velocidad fija activo: sin métricas en vivo para las instancias "
+"estáticas."
 
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:218
 msgid "Flow Isolation (shared default)"
@@ -478,6 +519,10 @@ msgstr "Instancias"
 msgid "Interface Up-Check Interval (s)"
 msgstr "Intervalo de comprobación de la interfaz (s)"
 
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:214
+msgid "Interfaces"
+msgstr "Interfaces"
+
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:231
 msgid ""
 "Isolation for the IFB ingress qdisc. For asymmetric links, <strong>dual-"
@@ -521,6 +566,17 @@ msgstr ""
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:618
 msgid "Live Status"
 msgstr "Estado en vivo"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:551
+msgid ""
+"Log a line whenever live CAKE per-tin statistics cannot be read from the "
+"kernel (errno and tin count). Enable for a debugging session, then disable. "
+"Off by default."
+msgstr ""
+"Registra una línea cada vez que no se puedan leer del kernel las "
+"estadísticas por tin de CAKE en vivo (errno y número de tins). Actívalo para "
+"una sesión de depuración y luego desactívalo. Desactivado de forma "
+"predeterminada."
 
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:181
 msgid ""
@@ -625,6 +681,10 @@ msgid ""
 msgstr ""
 "Respuestas perdidas dentro de la ventana necesarias para activar el "
 "reemplazo automático."
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:129
+msgid "Mode"
+msgstr "Modo"
 
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:314
 msgid "Moderate filtering"
@@ -921,18 +981,28 @@ msgstr "Iniciar"
 msgid "Startup Wait (s)"
 msgstr "Espera al arrancar (s)"
 
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:220
+msgid "Static"
+msgstr "Estático"
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:140
+msgid "Static – fixed target rate (sqm-scripts style)"
+msgstr "Estático: velocidad objetivo fija (estilo sqm-scripts)"
+
 #: luci-app-antilag/www/luci-static/resources/antilag/status.js:110
 #: luci-app-antilag/www/luci-static/resources/antilag/status.js:188
 msgid "Status"
 msgstr "Estado"
 
-#: luci-app-antilag/www/luci-static/resources/view/antilag.js:123
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:152
 msgid ""
 "Steady-state download rate held when the link is idle or lightly loaded, and "
 "the value the algorithm decays back to. Set it to your measured download "
 "speed minus roughly 5–10%. The rate ramps up from here under load and backs "
 "off when latency rises. Rate accounting is gross (it includes framing "
 "overhead), so a speed test reads a little lower than the value entered here."
+"<br>In <strong>Static</strong> mode this is simply the fixed download "
+"shaping target."
 msgstr ""
 "Velocidad de bajada en régimen estable que se mantiene cuando el enlace está "
 "inactivo o poco cargado, y valor al que el algoritmo decae. Configúrala como "
@@ -940,14 +1010,17 @@ msgstr ""
 "sube desde aquí con carga y retrocede cuando aumenta la latencia. La "
 "contabilidad de velocidad es bruta (incluye la sobrecarga de trama), así que "
 "un test de velocidad mostrará algo menos que el valor introducido aquí."
+"<br>En modo <strong>Estático</strong>, este es simplemente el objetivo fijo "
+"de modelado de bajada."
 
-#: luci-app-antilag/www/luci-static/resources/view/antilag.js:135
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:166
 msgid ""
 "Steady-state upload rate held when the link is idle or lightly loaded, and "
 "the value the algorithm decays back to. Set it to your measured upload speed "
 "minus roughly 5–10%. The rate ramps up from here under load and backs off "
 "when latency rises. Rate accounting is gross (it includes framing overhead), "
-"so a speed test reads a little lower than the value entered here."
+"so a speed test reads a little lower than the value entered here.<br>In "
+"<strong>Static</strong> mode this is simply the fixed upload shaping target."
 msgstr ""
 "Velocidad de subida en régimen estable que se mantiene cuando el enlace está "
 "inactivo o poco cargado, y valor al que el algoritmo decae. Configúrala como "
@@ -955,6 +1028,8 @@ msgstr ""
 "sube desde aquí con carga y retrocede cuando aumenta la latencia. La "
 "contabilidad de velocidad es bruta (incluye la sobrecarga de trama), así que "
 "un test de velocidad mostrará algo menos que el valor introducido aquí."
+"<br>En modo <strong>Estático</strong>, este es simplemente el objetivo fijo "
+"de modelado de subida."
 
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:610
 msgid "Stop"

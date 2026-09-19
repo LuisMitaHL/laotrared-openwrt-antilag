@@ -1,6 +1,17 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:130
+msgid ""
+"<strong>Dynamic</strong> (default): continuously measures latency against "
+"reflectors and adapts the download/upload shaper rates. Runs as a daemon."
+"<br><strong>Static</strong>: applies a fixed target download/upload rate "
+"exactly like sqm-scripts — no reflectors, no live changes, no daemon. The "
+"interface hotplug hook re-applies it whenever the WAN interface comes back "
+"up. Use this if you only want a fixed CAKE shaper or need to avoid "
+"conflicting with another QoS tool."
+msgstr ""
+
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:562
 msgid ""
 "A reflector is counted as non-responsive if it has not replied within this "
@@ -30,7 +41,9 @@ msgid ""
 "Adaptive CAKE shaper – automatically adjusts download and upload bandwidth "
 "based on measured one-way delay (OWD). Standalone operation: no sqm-scripts "
 "required. Each instance below shapes one WAN pair – add one instance per WAN "
-"for multi-WAN setups (e.g. with mwan3)."
+"for multi-WAN setups (e.g. with mwan3).<br>Set <strong>Mode</strong> to "
+"<strong>Static</strong> for a fixed target rate with no reflectors and no "
+"live changes (the sqm-scripts model)."
 msgstr ""
 
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:155
@@ -195,6 +208,10 @@ msgstr ""
 msgid "DSCP Wash (Upload)"
 msgstr ""
 
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:550
+msgid "Debug CAKE Statistics Reads"
+msgstr ""
+
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:494
 msgid "Decay Refractory Period (ms)"
 msgstr ""
@@ -223,6 +240,10 @@ msgstr ""
 msgid "Dropped"
 msgstr ""
 
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:139
+msgid "Dynamic – adaptive CAKE (OWD-driven)"
+msgstr ""
+
 #: luci-app-antilag/www/luci-static/resources/antilag/status.js:148
 msgid "ECN Marks"
 msgstr ""
@@ -233,6 +254,10 @@ msgstr ""
 
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:499
 msgid "Enable Sleep on Sustained Idle"
+msgstr ""
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:323
+msgid "Enabled – not applied (waiting for interface)"
 msgstr ""
 
 #: luci-app-antilag/www/luci-static/resources/antilag/status.js:274
@@ -247,6 +272,10 @@ msgstr ""
 msgid ""
 "Fallback isolation mode used for both DL and UL when the direction-specific "
 "options below are not set."
+msgstr ""
+
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:295
+msgid "Fixed-rate shaping active — no live metrics for static instances."
 msgstr ""
 
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:218
@@ -390,6 +419,10 @@ msgstr ""
 msgid "Interface Up-Check Interval (s)"
 msgstr ""
 
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:214
+msgid "Interfaces"
+msgstr ""
+
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:231
 msgid ""
 "Isolation for the IFB ingress qdisc. For asymmetric links, <strong>dual-"
@@ -419,6 +452,13 @@ msgstr ""
 
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:618
 msgid "Live Status"
+msgstr ""
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:551
+msgid ""
+"Log a line whenever live CAKE per-tin statistics cannot be read from the "
+"kernel (errno and tin count). Enable for a debugging session, then disable. "
+"Off by default."
 msgstr ""
 
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:181
@@ -512,6 +552,10 @@ msgstr ""
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:572
 msgid ""
 "Missed responses within the window required to trigger automatic replacement."
+msgstr ""
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:129
+msgid "Mode"
 msgstr ""
 
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:314
@@ -767,27 +811,38 @@ msgstr ""
 msgid "Startup Wait (s)"
 msgstr ""
 
+#: luci-app-antilag/www/luci-static/resources/antilag/status.js:220
+msgid "Static"
+msgstr ""
+
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:140
+msgid "Static – fixed target rate (sqm-scripts style)"
+msgstr ""
+
 #: luci-app-antilag/www/luci-static/resources/antilag/status.js:110
 #: luci-app-antilag/www/luci-static/resources/antilag/status.js:188
 msgid "Status"
 msgstr ""
 
-#: luci-app-antilag/www/luci-static/resources/view/antilag.js:123
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:152
 msgid ""
 "Steady-state download rate held when the link is idle or lightly loaded, and "
 "the value the algorithm decays back to. Set it to your measured download "
 "speed minus roughly 5–10%. The rate ramps up from here under load and backs "
 "off when latency rises. Rate accounting is gross (it includes framing "
 "overhead), so a speed test reads a little lower than the value entered here."
+"<br>In <strong>Static</strong> mode this is simply the fixed download "
+"shaping target."
 msgstr ""
 
-#: luci-app-antilag/www/luci-static/resources/view/antilag.js:135
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:166
 msgid ""
 "Steady-state upload rate held when the link is idle or lightly loaded, and "
 "the value the algorithm decays back to. Set it to your measured upload speed "
 "minus roughly 5–10%. The rate ramps up from here under load and backs off "
 "when latency rises. Rate accounting is gross (it includes framing overhead), "
-"so a speed test reads a little lower than the value entered here."
+"so a speed test reads a little lower than the value entered here.<br>In "
+"<strong>Static</strong> mode this is simply the fixed upload shaping target."
 msgstr ""
 
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:610
