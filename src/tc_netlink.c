@@ -119,6 +119,18 @@ struct tc_nl_ctx {
 
 /* ── Low-level nlattr helpers ────────────────────────────────────────── */
 
+/*
+ * nla_stripped_type – attribute type without the NLA_F_NESTED flag.
+ * The kernel sets 0x8000 on every nested attribute it sends
+ * (TCA_STATS2, TCA_STATS_APP, TCA_CAKE_STATS_TIN_STATS, per-tin
+ * nests), so raw comparisons against TCA_* constants never match
+ * on the parse path. iproute2 masks the same way.
+ */
+static inline uint16_t nla_stripped_type(const struct nlattr *a)
+{
+    return (uint16_t)(a->nla_type & NLA_TYPE_MASK);
+}
+
 static void nl_put_attr(char *buf, int *pos,
                         uint16_t type, const void *data, uint16_t dlen)
 {
@@ -960,7 +972,7 @@ static void tc__parse_tin(const struct nlattr *tin, cake_tin_stats_t *t)
 
     while (rem >= (int)sizeof(*a) &&
            a->nla_len >= NLA_HDRLEN && a->nla_len <= rem) {
-        switch (a->nla_type) {
+        switch (nla_stripped_type(a)) {
         case TCA_CAKE_TIN_STATS_THRESHOLD_RATE64:    t->threshold_bps     = nla_get_u64_val(a); break;
         case TCA_CAKE_TIN_STATS_SENT_PACKETS:        t->sent_packets      = nla_get_u32_val(a); break;
         case TCA_CAKE_TIN_STATS_SENT_BYTES64:        t->sent_bytes        = nla_get_u64_val(a); break;
@@ -996,7 +1008,7 @@ static void tc__parse_cake_app(const struct nlattr *app, cake_qdisc_stats_t *out
 
     while (rem >= (int)sizeof(*a) &&
            a->nla_len >= NLA_HDRLEN && a->nla_len <= rem) {
-        switch (a->nla_type) {
+        switch (nla_stripped_type(a)) {
         case TCA_CAKE_STATS_CAPACITY_ESTIMATE64:
             out->capacity_bps = nla_get_u64_val(a);
             break;
@@ -1018,7 +1030,7 @@ static void tc__parse_cake_app(const struct nlattr *app, cake_qdisc_stats_t *out
 
             while (trem >= (int)sizeof(*ta) &&
                    ta->nla_len >= NLA_HDRLEN && ta->nla_len <= trem) {
-                unsigned int idx = ta->nla_type;   /* 1-based */
+                unsigned int idx = nla_stripped_type(ta);   /* 1-based */
                 if (idx >= 1 && idx <= 8 &&
                     out->tin_cnt < 8) {
                     tc__parse_tin(ta, &out->tins[out->tin_cnt]);
@@ -1053,7 +1065,7 @@ static int tc__parse_qdisc_msg(const struct nlmsghdr *nlh,
 
     while (rem >= (int)sizeof(*a) &&
            a->nla_len >= NLA_HDRLEN && a->nla_len <= rem) {
-        switch (a->nla_type) {
+        switch (nla_stripped_type(a)) {
         case TCA_KIND:
             snprintf(kind, sizeof(kind), "%s", (const char *)a + NLA_HDRLEN);
             break;
@@ -1077,7 +1089,7 @@ static int tc__parse_qdisc_msg(const struct nlmsghdr *nlh,
 
     while (rem2 >= (int)sizeof(*s) &&
            s->nla_len >= NLA_HDRLEN && s->nla_len <= rem2) {
-        if (s->nla_type == TCA_STATS_APP) {
+        if (nla_stripped_type(s) == TCA_STATS_APP) {
             tc__parse_cake_app(s, out);
             return 1;
         }
@@ -1140,29 +1152,16 @@ int tc_cake_get_stats(tc_nl_ctx_t *ctx, const char *iface,
     int found = 0;
     int done = 0;
 
-    /* TEMP DEBUG2: trace raw dump once per direction (first 2 calls). */
-    static int dbg_trace_n = 0;
-    int trace_this = (dbg_trace_n < 2);
-    if (trace_this)
-        dbg_trace_n++;
-
     uint8_t rbuf[CAKE_DUMP_BUF_SIZE];
     while (!done) {
         ssize_t n = recv(ctx->fd, rbuf, sizeof(rbuf), 0);
         if (n < (ssize_t)NLMSG_HDRLEN)
             break;
 
-        if (trace_this)
-            syslog(LOG_WARNING, "qdisc_stats DBG2: %s recv %zd bytes (want seq=%u):",
-                   iface, n, nlh->nlmsg_seq);
-
         struct nlmsghdr *h = (struct nlmsghdr *)rbuf;
         int rem = (int)n;
 
         for (; NLMSG_OK(h, rem); h = NLMSG_NEXT(h, rem)) {
-            if (trace_this)
-                syslog(LOG_WARNING, "qdisc_stats DBG2: %s msg type=%u seq=%u len=%u",
-                       iface, h->nlmsg_type, h->nlmsg_seq, h->nlmsg_len);
             /* Skip unsolicited notifications (link events etc.) */
             if (h->nlmsg_seq != nlh->nlmsg_seq)
                 continue;
