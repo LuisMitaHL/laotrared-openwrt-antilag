@@ -92,6 +92,11 @@ static int64_t parse_fixed(const char *s, int64_t scale)
 
 /* ── defaults ────────────────────────────────────────────────── */
 
+const char *config_mode_name(int mode)
+{
+    return (mode == MODE_STATIC) ? "static" : "dynamic";
+}
+
 void config_set_defaults(cake_config_t *cfg)
 {
     memset(cfg, 0, sizeof(*cfg));
@@ -101,6 +106,7 @@ void config_set_defaults(cake_config_t *cfg)
     cfg->ping_bind_if[0] = '\0';          /* unbound; follow routing */
 
     cfg->enabled                 = 0;
+    cfg->mode                    = MODE_DYNAMIC;
     cfg->adjust_dl_shaper_rate   = 1;
     cfg->adjust_ul_shaper_rate   = 1;
     cfg->min_dl_shaper_rate_kbps  = 5000;
@@ -248,6 +254,18 @@ int config_load(const char *section_name, cake_config_t *cfg)
 
     /* Basic */
     UCI_INT(enabled,                    "enabled");
+
+    /*
+     * mode: "dynamic" (default) or "static".  Parsed as a string so that
+     * an unknown/typo value falls back to the safe dynamic default instead
+     * of silently becoming static.
+     */
+    {
+        const char *_v = uci_get(ctx, sec, "mode");
+        cfg->mode = (_v && strcmp(_v, "static") == 0) ? MODE_STATIC
+                                                       : MODE_DYNAMIC;
+    }
+
     UCI_STR(dl_if,                      "dl_if");
     UCI_STR(ul_if,                      "ul_if");
     UCI_STR(ping_bind_if,               "ping_bind_if");

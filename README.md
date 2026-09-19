@@ -19,6 +19,7 @@ While the algorithm is excellent at mitigating bufferbloat, running a complex ba
 - **Native C implementation** — no bash scripts, no subshells, minimal CPU footprint
 - **Event-driven architecture** — uses `libubox/uloop` to eliminate polling busy-loops
 - **Multi-WAN** — one independent daemon instance per UCI section; shape any number of WAN links alongside policy routing (mwan3)
+- **Static or adaptive per instance** — run adaptive shaping on one link and a fixed sqm-scripts-style target rate on another, from the same config and web UI
 - **Direct CAKE management** — creates and manages IFB + CAKE qdiscs entirely via raw NETLINK_ROUTE, with no dependency on SQM scripts
 - **Efficient system I/O** — reads network statistics directly from `/sys/class/net/.../statistics`
 - **Asynchronous pinging** — custom ICMP pinger supporting both Echo (type 8) and Timestamp (type 13) modes
@@ -131,6 +132,47 @@ Requirements and notes:
 - **`ping_bind_if`** — binds the ICMP measurement socket to that interface (`SO_BINDTODEVICE`). Required for multi-WAN: without it, policy routing (mwan3) may send reflector pings out an arbitrary WAN, corrupting the per-WAN OWD measurement. Typically the same value as `ul_if`. Leave empty on single-WAN setups to follow the routing table.
 - **mwan3 interplay** — antilag only touches qdiscs; it does not conflict with mwan3's nftables marking or routing rules. mwan3 handles per-flow routing and load balancing, antilag handles per-WAN bufferbloat control. mwan3's own `track` pings are unaffected.
 - Each instance keeps its own reflector list and status file (`/var/run/antilag-<section>.json`), and shows up as a separate status block on the LuCI Overview page.
+
+### Static Instances (sqm-scripts replacement)
+
+Every instance has a **Mode**:
+
+| Mode | Behaviour |
+| :--- | :--- |
+| `dynamic` (default) | Adaptive: pings reflectors, measures OWD and adjusts the CAKE rates continuously. Runs as a procd daemon. |
+| `static` | Fixed target download/upload rate, no reflectors and no live changes. The sqm-scripts model. |
+
+A static instance applies CAKE once and then stays out of the way — there is
+no daemon, no pinging and no rate monitor. This is what you want when:
+
+- you only need a fixed shaper (a guest network, a backup link, …);
+- another tool owns the adaptive logic on that link;
+- you want to replace **sqm-scripts** without running both at once.
+
+```
+config antilag 'guest'
+    option enabled '1'
+    option mode 'static'
+    option dl_if 'ifb-guest'
+    option ul_if 'br-guest'
+    option base_dl_shaper_rate_kbps '50000'
+    option base_ul_shaper_rate_kbps '20000'
+```
+
+In static mode the `base_*_shaper_rate_kbps` values are the fixed targets and
+all reflector/OWD options are ignored. The CAKE qdisc options (`cake_overhead`,
+`cake_mpu`, `cake_nat`, `cake_diffserv`, `cake_flow_mode`, …) still apply.
+
+Because a static instance has no daemon, its qdiscs are re-created by the
+interface hotplug hook `/etc/hotplug.d/iface/25-antilag` — exactly like
+sqm-scripts — whenever the `ul_if` interface comes up (PPPoE reconnect, DHCP
+renew, modem re-registration). The hook also tears the qdiscs down on
+`ifdown`. A state file in `/var/run/antilag-<section>.state` records the
+interfaces so `stop` can clean up even after the UCI section is deleted.
+
+> **Note:** do not point an antilag instance and an sqm-scripts `queue`
+> section at the same interface — both create CAKE qdiscs and they will fight.
+> Use a static antilag instance *instead of* SQM for that link.
 
 ### 5G / LTE Notes
 

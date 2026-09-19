@@ -3,10 +3,20 @@
  *
  * Standalone CAKE autorate daemon: no SQM scripts required.
  *
+ * Two instance modes (per UCI section, `option mode`):
+ *   dynamic – adaptive OWD-driven shaping, run as a procd daemon
+ *   static  – fixed target rate, no reflectors/live changes, applied
+ *             one-shot at service start and by the iface hotplug hook
+ *
  * Lifecycle managed entirely in-process via tc_netlink.c:
  *   Startup  → tc_dl_setup() + tc_ul_setup()   (creates IFB, qdiscs, filters)
  *   Runtime  → tc_cake_set_bandwidth()          (adjusts rates in-place)
  *   Shutdown → tc_dl_teardown() + tc_ul_teardown() (removes all TC objects)
+ *
+ * Subcommands:
+ *   antilag run   <section>  adaptive daemon (dynamic instances)
+ *   antilag apply <section>  one-shot install of a static instance
+ *   antilag stop  <section>  tear down an instance's qdiscs
  *
  * Algorithm mirrors cake-autorate.sh:
  *   • ICMP ping via raw IPv4 socket (in-process, no external pinger binary)
@@ -212,6 +222,87 @@ static void set_nonblocking(int fd)
         fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
 
+/*
+ * instance_id_valid – UCI section names should already be limited to
+ * [A-Za-z0-9_], but the daemon receives the section name from argv and
+ * embeds it in a filesystem path.  Enforce the safe charset here so a
+ * crafted value can never escape /var/run.
+ */
+static int instance_id_valid(const char *id)
+{
+    if (!id || !*id)
+        return 0;
+    for (const char *p = id; *p; p++) {
+        char c = *p;
+        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+              (c >= '0' && c <= '9') || c == '_' || c == '-'))
+            return 0;
+    }
+    return 1;
+}
+
+/* ────────────────────────────────────────────────────────────── */
+/*  Static-instance state file                                    */
+/*                                                                */
+/*  Static instances have no daemon to remember which interfaces  */
+/*  they shaped, so apply writes them to                       */
+/*  /var/run/antilag-<section>.state.  stop reads that file so it */
+/*  can tear the qdiscs down even after the UCI section is gone.  */
+/*  Mirrors sqm-scripts' /var/run/SQM state files.                */
+/* ────────────────────────────────────────────────────────────── */
+
+static void state_path_for(const char *section, char *out, size_t n)
+{
+    snprintf(out, n, "/var/run/antilag-%s.state", section);
+}
+
+static void write_state_file(const cake_config_t *c)
+{
+    char path[96];
+    state_path_for(c->instance_id, path, sizeof(path));
+
+    FILE *f = fopen(path, "w");
+    if (!f)
+        return;
+    fprintf(f, "dl_if=%s\nul_if=%s\n", c->dl_if, c->ul_if);
+    fclose(f);
+}
+
+/*
+ * read_state_file – load dl_if/ul_if from the per-section state file.
+ * Returns 0 when at least one field was read, -1 otherwise.
+ */
+static int read_state_file(const char *section,
+                           char *dl_if, size_t dl_n,
+                           char *ul_if, size_t ul_n)
+{
+    char path[96];
+    state_path_for(section, path, sizeof(path));
+
+    FILE *f = fopen(path, "r");
+    if (!f)
+        return -1;
+
+    char line[128];
+    int  got = 0;
+    while (fgets(line, sizeof(line), f)) {
+        if (strncmp(line, "dl_if=", 6) == 0) {
+            snprintf(dl_if, dl_n, "%s", line + 6);
+            /* strip trailing whitespace/newline */
+            for (char *p = dl_if; *p; p++)
+                if (*p == '\n' || *p == '\r' || *p == ' ' || *p == '\t') { *p = '\0'; break; }
+            got++;
+        } else if (strncmp(line, "ul_if=", 6) == 0) {
+            snprintf(ul_if, ul_n, "%s", line + 6);
+            for (char *p = ul_if; *p; p++)
+                if (*p == '\n' || *p == '\r' || *p == ' ' || *p == '\t') { *p = '\0'; break; }
+            got++;
+        }
+    }
+    fclose(f);
+    return got ? 0 : -1;
+}
+
 /* ────────────────────────────────────────────────────────────── */
 /*  Runtime status file  (/var/run/antilag-<instance>.json)          */
 /*                                                                */
@@ -295,41 +386,10 @@ static void write_status_file(autorate_t *ar)
     cake_qdisc_stats_t dl_stats = { 0 }, ul_stats = { 0 };
     int have_dl = 0, have_ul = 0;
 
-    /* TEMP DEBUG: one-shot log so we can see why stats are missing. */
-    static int dbg_dl_logged = 0, dbg_ul_logged = 0;
-
-    if (ar->tc_nl && ar->dl_setup_done) {
-        errno = 0;
+    if (ar->tc_nl && ar->dl_setup_done)
         have_dl = (tc_cake_get_stats(ar->tc_nl, ar->cfg.dl_if, &dl_stats) == 0);
-        if (!have_dl && !dbg_dl_logged) {
-            dbg_dl_logged = 1;
-            syslog(LOG_WARNING,
-                   "qdisc_stats DBG: DL %s failed: %m (setup=%d tin_cnt=%d)",
-                   ar->cfg.dl_if, ar->dl_setup_done, dl_stats.tin_cnt);
-        } else if (have_dl) {
-            dbg_dl_logged = 0;
-        }
-    } else if (!dbg_dl_logged) {
-        dbg_dl_logged = 1;
-        syslog(LOG_WARNING, "qdisc_stats DBG: DL skipped (tc_nl=%p setup=%d)",
-               (void *)ar->tc_nl, ar->dl_setup_done);
-    }
-    if (ar->tc_nl && ar->ul_setup_done) {
-        errno = 0;
+    if (ar->tc_nl && ar->ul_setup_done)
         have_ul = (tc_cake_get_stats(ar->tc_nl, ar->cfg.ul_if, &ul_stats) == 0);
-        if (!have_ul && !dbg_ul_logged) {
-            dbg_ul_logged = 1;
-            syslog(LOG_WARNING,
-                   "qdisc_stats DBG: UL %s failed: %m (setup=%d tin_cnt=%d)",
-                   ar->cfg.ul_if, ar->ul_setup_done, ul_stats.tin_cnt);
-        } else if (have_ul) {
-            dbg_ul_logged = 0;
-        }
-    } else if (!dbg_ul_logged) {
-        dbg_ul_logged = 1;
-        syslog(LOG_WARNING, "qdisc_stats DBG: UL skipped (tc_nl=%p setup=%d)",
-               (void *)ar->tc_nl, ar->ul_setup_done);
-    }
 
     FILE *f = fopen(ar->status_tmp_path, "w");
     if (!f)
@@ -342,6 +402,7 @@ static void write_status_file(autorate_t *ar)
     fprintf(f,
         "{\n"
         "  \"instance\": \"%s\",\n"
+        "  \"mode\": \"dynamic\",\n"
         "  \"state\": \"%s\",\n"
         "  \"link_up\": %d,\n"
         "  \"dl_if\": \"%s\",\n"
@@ -386,6 +447,56 @@ static void write_status_file(autorate_t *ar)
 
     fclose(f);
     rename(ar->status_tmp_path, ar->status_path);
+}
+
+/*
+ * write_static_status – minimal status document for a stateless static
+ * instance.  There is no daemon to refresh it, so it contains only the
+ * fixed shaper rates and which directions were installed; the LuCI
+ * widget renders it as a compact "Static" block without live metrics.
+ */
+static void write_static_status(const cake_config_t *c, int dl_up, int ul_up)
+{
+    char path[96], tmp[104];
+    snprintf(path, sizeof(path), "/var/run/antilag-%s.json", c->instance_id);
+    snprintf(tmp,  sizeof(tmp),  "/var/run/antilag-%s.json.tmp", c->instance_id);
+
+    FILE *f = fopen(tmp, "w");
+    if (!f)
+        return;
+
+    fprintf(f,
+        "{\n"
+        "  \"instance\": \"%s\",\n"
+        "  \"mode\": \"static\",\n"
+        "  \"state\": \"static\",\n"
+        "  \"link_up\": %d,\n"
+        "  \"dl_if\": \"%s\",\n"
+        "  \"ul_if\": \"%s\",\n"
+        "  \"shaper_dl_kbps\": %u,\n"
+        "  \"shaper_ul_kbps\": %u,\n"
+        "  \"achieved_dl_kbps\": 0,\n"
+        "  \"achieved_ul_kbps\": 0,\n"
+        "  \"load_dl\": \"idle\",\n"
+        "  \"load_ul\": \"idle\",\n"
+        "  \"bb_dl\": 0,\n"
+        "  \"bb_ul\": 0,\n"
+        "  \"avg_owd_dl_ms10\": 0,\n"
+        "  \"avg_owd_ul_ms10\": 0,\n"
+        "  \"active_reflectors\": 0,\n"
+        "  \"uptime_s\": 0,\n"
+        "  \"dl_active\": %d,\n"
+        "  \"ul_active\": %d\n"
+        "}\n",
+        c->instance_id,
+        (dl_up || ul_up) ? 1 : 0,
+        c->dl_if, c->ul_if,
+        dl_up ? c->base_dl_shaper_rate_kbps : 0,
+        ul_up ? c->base_ul_shaper_rate_kbps : 0,
+        dl_up, ul_up);
+
+    fclose(f);
+    rename(tmp, path);
 }
 
 /* ────────────────────────────────────────────────────────────── */
@@ -508,6 +619,147 @@ static void cake_teardown(autorate_t *ar)
         tc_ul_teardown(ar->tc_nl, c->ul_if);
         ar->ul_setup_done = 0;
     }
+}
+
+/* ────────────────────────────────────────────────────────────── */
+/*  Static instances – one-shot apply / stop                      */
+/*                                                                */
+/*  Static instances are the sqm-scripts model: a fixed target    */
+/*  download/upload rate, no reflectors, no live adjustment and   */
+/*  no long-running daemon.  The init script applies them at      */
+/*  service start and the interface hotplug hook re-applies them  */
+/*  whenever the WAN interface comes back up.                     */
+/* ────────────────────────────────────────────────────────────── */
+
+/*
+ * instance_stop – remove the CAKE plumbing for a section.
+ *
+ * Interface names come from UCI when the section still exists, and
+ * otherwise from the state file written by static_apply().  This lets
+ * `stop` clean up after a section has been deleted from the config.
+ * Safe to call with no qdiscs present.
+ */
+static int instance_stop(const char *section)
+{
+    cake_config_t c;
+    char dl_if[MAX_IF_NAME] = "";
+    char ul_if[MAX_IF_NAME] = "";
+    char path[96];
+    int  have = 0;
+
+    if (!instance_id_valid(section)) {
+        syslog(LOG_ERR, "stop: invalid section name '%s'", section);
+        return 1;
+    }
+
+    if (config_load(section, &c) == 0) {
+        snprintf(dl_if, sizeof(dl_if), "%s", c.dl_if);
+        snprintf(ul_if, sizeof(ul_if), "%s", c.ul_if);
+        have = 1;
+    }
+    if (read_state_file(section, dl_if, sizeof(dl_if),
+                        ul_if, sizeof(ul_if)) == 0)
+        have = 1;
+
+    if (have && ul_if[0]) {
+        tc_nl_ctx_t *nl = tc_nl_open();
+        if (!nl) {
+            syslog(LOG_ERR, "stop: netlink open failed: %m");
+        } else {
+            if (dl_if[0])
+                tc_dl_teardown(nl, ul_if, dl_if);
+            tc_ul_teardown(nl, ul_if);
+            tc_nl_close(nl);
+        }
+    }
+
+    snprintf(path, sizeof(path), "/var/run/antilag-%s.json", section);
+    unlink(path);
+    state_path_for(section, path, sizeof(path));
+    unlink(path);
+
+    return 0;
+}
+
+/*
+ * static_apply – install the fixed-rate CAKE qdiscs for one static
+ * instance and exit.  Idempotent: the underlying tc_dl_setup /
+ * tc_ul_setup calls tolerate existing objects, so a hotplug re-apply
+ * is safe.
+ */
+static int static_apply(const char *section)
+{
+    cake_config_t c;
+    tc_nl_ctx_t  *nl;
+    int           dl_done = 0;
+    int           ul_done = 0;
+
+    if (!instance_id_valid(section)) {
+        syslog(LOG_ERR, "apply: invalid section name '%s'", section);
+        return 1;
+    }
+
+    if (config_load(section, &c) < 0) {
+        syslog(LOG_ERR, "apply: cannot load config section '%s'", section);
+        return 1;
+    }
+
+    /* Dynamic instances are owned by the procd daemon. */
+    if (c.mode != MODE_STATIC)
+        return 0;
+
+    if (!c.enabled)
+        return instance_stop(section);
+
+    if (!c.ul_if[0]) {
+        syslog(LOG_ERR, "apply: static instance '%s' has no ul_if", section);
+        return 1;
+    }
+
+    nl = tc_nl_open();
+    if (!nl) {
+        syslog(LOG_ERR, "apply: netlink open failed: %m");
+        return 1;
+    }
+
+    if (c.dl_if[0]) {
+        cake_qdisc_opts_t o = make_dl_opts(&c);
+        if (tc_dl_setup(nl, c.ul_if, c.dl_if,
+                        c.base_dl_shaper_rate_kbps, &o) < 0)
+            syslog(LOG_ERR, "apply: DL setup failed on %s (ifb %s): %m",
+                   c.ul_if, c.dl_if);
+        else
+            dl_done = 1;
+    }
+
+    {
+        cake_qdisc_opts_t o = make_ul_opts(&c);
+        if (tc_ul_setup(nl, c.ul_if, c.base_ul_shaper_rate_kbps, &o) < 0)
+            syslog(LOG_ERR, "apply: UL setup failed on %s: %m", c.ul_if);
+        else
+            ul_done = 1;
+    }
+
+    tc_nl_close(nl);
+
+    if (!dl_done && !ul_done) {
+        syslog(LOG_ERR,
+               "apply: no CAKE qdisc could be installed for '%s' "
+               "(interface down?)", section);
+        return 1;
+    }
+
+    write_state_file(&c);
+    write_static_status(&c, dl_done, ul_done);
+
+    syslog(LOG_INFO,
+           "static shaping applied: '%s' dl=%s/%ukbps ul=%s/%ukbps",
+           section,
+           dl_done ? c.dl_if : "-",
+           dl_done ? c.base_dl_shaper_rate_kbps : 0,
+           ul_done ? c.ul_if : "-",
+           ul_done ? c.base_ul_shaper_rate_kbps : 0);
+    return 0;
 }
 
 /* ────────────────────────────────────────────────────────────── */
@@ -1465,33 +1717,10 @@ static void if_up_timer_cb(struct uloop_timeout *t)
 }
 
 /* ────────────────────────────────────────────────────────────── */
-/*  main                                                          */
+/*  Daemon entry point – dynamic (adaptive) instances             */
 /* ────────────────────────────────────────────────────────────── */
-/*
- * instance_id_valid – UCI section names should already be limited to
- * [A-Za-z0-9_], but the daemon receives the section name from argv and
- * embeds it in a filesystem path.  Enforce the safe charset here so a
- * crafted value can never escape /var/run.
- */
-static int instance_id_valid(const char *id)
+static int daemon_run(const char *section)
 {
-    if (!id || !*id)
-        return 0;
-    for (const char *p = id; *p; p++) {
-        char c = *p;
-        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-              (c >= '0' && c <= '9') || c == '_' || c == '-'))
-            return 0;
-    }
-    return 1;
-}
-
-int main(int argc, char *argv[])
-{
-    const char *section = (argc > 1) ? argv[1] : "wan";
-
-    openlog("antilag", LOG_PID | LOG_NDELAY, LOG_DAEMON);
-
     autorate_t ar;
     memset(&ar, 0, sizeof(ar));
     ar.icmp_sock  = -1;
@@ -1510,6 +1739,14 @@ int main(int argc, char *argv[])
         syslog(LOG_INFO, "instance '%s' disabled, exiting", section);
         return 0;
     }
+
+    /*
+     * Static instances do not run a daemon: install the fixed-rate qdiscs
+     * now and exit.  This keeps the legacy `antilag <section>` invocation
+     * working if an old init script is still in place.
+     */
+    if (ar.cfg.mode == MODE_STATIC)
+        return static_apply(section);
 
     /* ── Per-instance status file paths ──────────────────────── */
     if (!instance_id_valid(ar.cfg.instance_id)) {
@@ -1638,6 +1875,44 @@ err_free_windows:
     free(ar.dl_owd_deltas_us);
     free(ar.ul_owd_deltas_us);
 
-    closelog();
     return 0;
+}
+
+/* ────────────────────────────────────────────────────────────── */
+/*  main – subcommand dispatch                                    */
+/*                                                                */
+/*    antilag run   <section>   run the adaptive daemon           */
+/*    antilag apply <section>   one-shot install of a static      */
+/*                              instance (init + iface hotplug)   */
+/*    antilag stop  <section>   tear down an instance's qdiscs    */
+/*    antilag <section>         legacy alias for `run`            */
+/* ────────────────────────────────────────────────────────────── */
+int main(int argc, char *argv[])
+{
+    const char *action  = "run";
+    const char *section = "wan";
+    int         rc;
+
+    openlog("antilag", LOG_PID | LOG_NDELAY, LOG_DAEMON);
+
+    if (argc > 1 &&
+        (strcmp(argv[1], "run")   == 0 ||
+         strcmp(argv[1], "apply") == 0 ||
+         strcmp(argv[1], "stop")  == 0)) {
+        action = argv[1];
+        if (argc > 2 && argv[2][0])
+            section = argv[2];
+    } else if (argc > 1 && argv[1][0]) {
+        section = argv[1];          /* legacy: `antilag <section>` */
+    }
+
+    if (strcmp(action, "apply") == 0)
+        rc = static_apply(section);
+    else if (strcmp(action, "stop") == 0)
+        rc = instance_stop(section);
+    else
+        rc = daemon_run(section);
+
+    closelog();
+    return rc;
 }

@@ -8,6 +8,22 @@
 #define MAX_IF_NAME    32
 
 /*
+ * Instance mode.
+ *
+ *   MODE_DYNAMIC – default.  The daemon measures OWD against reflectors and
+ *                  continuously adapts the CAKE shaper rates.
+ *
+ *   MODE_STATIC  – fixed-rate shaping only, no reflectors and no live
+ *                  changes (the sqm-scripts model).  The instance is applied
+ *                  one-shot at service start and re-applied by the interface
+ *                  hotplug hook; it never runs as a daemon.
+ *
+ * UCI option: mode ('dynamic' | 'static')
+ */
+#define MODE_DYNAMIC 0
+#define MODE_STATIC  1
+
+/*
  * Fixed-point encoding conventions used throughout this struct:
  *
  *   _us   – value stored in microseconds             (int64_t)
@@ -24,6 +40,7 @@ typedef struct {
     /* Instance */
     char     instance_id[32];
     int      enabled;
+    int      mode;                 /* MODE_DYNAMIC or MODE_STATIC */
 
     /* Interfaces */
     char     dl_if[MAX_IF_NAME];   /* IFB interface for DL shaping   */
@@ -274,5 +291,8 @@ typedef struct {
 
 int  config_load(const char *uci_section, cake_config_t *cfg);
 void config_set_defaults(cake_config_t *cfg);
+
+/* Human-readable name for a cfg->mode value ("dynamic" / "static"). */
+const char *config_mode_name(int mode);
 
 #endif /* CONFIG_H */

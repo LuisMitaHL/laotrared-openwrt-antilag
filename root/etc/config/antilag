@@ -2,6 +2,28 @@ config antilag 'wan'
     # ── Enable / disable ─────────────────────────────────────
     option enabled '0'
 
+    # ── Mode ─────────────────────────────────────────────────
+    # dynamic: measure OWD against reflectors and adapt the CAKE shaper
+    #          rates continuously (runs as a procd daemon).
+    # static:  fixed target rate, no reflectors, no live changes — the
+    #          sqm-scripts model. Applied once at service start and
+    #          re-applied by /etc/hotplug.d/iface/25-antilag whenever the
+    #          WAN interface comes back up.
+    #
+    # In static mode everything below except the interfaces, the base
+    # shaper rates and the CAKE qdisc options is ignored.
+    #
+    # Static example (replaces an sqm-scripts 'queue' section):
+    #
+    #   config antilag 'guest'
+    #       option enabled '1'
+    #       option mode 'static'
+    #       option dl_if 'ifb-guest'
+    #       option ul_if 'br-guest'
+    #       option base_dl_shaper_rate_kbps '50000'
+    #       option base_ul_shaper_rate_kbps '20000'
+    option mode 'dynamic'
+
     # ── Interfaces ───────────────────────────────────────────
     # dl_if: IFB interface for shaped ingress (created automatically at startup)
     # ul_if: WAN-facing interface for egress shaping

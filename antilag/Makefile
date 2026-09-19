@@ -31,6 +31,11 @@ define Package/antilag/description
 
   Supports ICMP Timestamp (type 13) for true per-direction OWD measurement.
   Manages the full IFB + CAKE plumbing lifecycle via netlink.
+
+  Dynamic instances adapt the shaper rate from live OWD measurements.
+  Static instances apply a fixed target download/upload rate with no
+  reflectors or live changes (the sqm-scripts model), re-applied by an
+  iface hotplug hook when the WAN interface comes back up.
 endef
 
 define Package/antilag/postinst
@@ -80,6 +85,13 @@ define Package/antilag/install
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) $(PKG_ROOT)/root/etc/config/antilag \
 		$(1)/etc/config/
+
+	# iface hotplug hook: re-applies static instances on WAN up/down
+	# (same model as sqm-scripts).
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
+	$(INSTALL_BIN) \
+		$(PKG_ROOT)/root/etc/hotplug.d/iface/25-antilag \
+		$(1)/etc/hotplug.d/iface/
 
 	$(INSTALL_DIR) $(1)/usr/share/luci/menu.d
 	$(INSTALL_DATA) \

@@ -75,7 +75,10 @@ return view.extend({
               'bandwidth based on measured one-way delay (OWD). ' +
               'Standalone operation: no sqm-scripts required. ' +
               'Each instance below shapes one WAN pair – add one instance per WAN ' +
-              'for multi-WAN setups (e.g. with mwan3).'));
+              'for multi-WAN setups (e.g. with mwan3).<br>' +
+              'Set <strong>Mode</strong> to <strong>Static</strong> for a fixed ' +
+              'target rate with no reflectors and no live changes (the ' +
+              'sqm-scripts model).'));
 
         /* ── Instances grid ────────────────────────────────────
          *
@@ -104,11 +107,37 @@ return view.extend({
             return opt;
         }
 
+        /*
+         * moptDyn – a modal option that only applies to adaptive (dynamic)
+         * instances.  Static instances have no reflectors and never adjust
+         * the shaper, so their tuning options are hidden when mode=static.
+         */
+        function moptDyn(tab, type, name, label, description) {
+            var opt = mopt(tab, type, name, label, description);
+            opt.depends('mode', 'dynamic');
+            return opt;
+        }
+
         /* ── Grid summary columns (also editable in the modal) ── */
         o = s.taboption('general', form.Flag, 'enabled', _('Enable'),
             _('Master switch for this instance. When off, the daemon does not ' +
               'start and no CAKE qdisc is installed for this WAN pair.'));
         o.default = '0';
+        o.rmempty = false;
+        o.modalonly = false;
+
+        o = s.taboption('general', form.ListValue, 'mode', _('Mode'),
+            _('<strong>Dynamic</strong> (default): continuously measures latency ' +
+              'against reflectors and adapts the download/upload shaper rates. ' +
+              'Runs as a daemon.<br>' +
+              '<strong>Static</strong>: applies a fixed target download/upload ' +
+              'rate exactly like sqm-scripts — no reflectors, no live changes, ' +
+              'no daemon. The interface hotplug hook re-applies it whenever the ' +
+              'WAN interface comes back up. Use this if you only want a fixed ' +
+              'CAKE shaper or need to avoid conflicting with another QoS tool.'));
+        o.default = 'dynamic';
+        o.value('dynamic', _('Dynamic – adaptive CAKE (OWD-driven)'));
+        o.value('static',  _('Static – fixed target rate (sqm-scripts style)'));
         o.rmempty = false;
         o.modalonly = false;
 
@@ -125,7 +154,9 @@ return view.extend({
               'measured download speed minus roughly 5–10%. The rate ramps up from ' +
               'here under load and backs off when latency rises. Rate accounting is ' +
               'gross (it includes framing overhead), so a speed test reads a little ' +
-              'lower than the value entered here.'));
+              'lower than the value entered here.<br>' +
+              'In <strong>Static</strong> mode this is simply the fixed download ' +
+              'shaping target.'));
         o.datatype = 'uinteger';
         o.default  = '20000';
         o.modalonly = false;
@@ -137,7 +168,9 @@ return view.extend({
               'measured upload speed minus roughly 5–10%. The rate ramps up from ' +
               'here under load and backs off when latency rises. Rate accounting is ' +
               'gross (it includes framing overhead), so a speed test reads a little ' +
-              'lower than the value entered here.'));
+              'lower than the value entered here.<br>' +
+              'In <strong>Static</strong> mode this is simply the fixed upload ' +
+              'shaping target.'));
         o.datatype = 'uinteger';
         o.default  = '20000';
         o.modalonly = false;
@@ -152,18 +185,18 @@ return view.extend({
               'Must be unique per instance.'));
         o.rmempty = false;
 
-        o = mopt('general', form.Flag, 'adjust_dl_shaper_rate', _('Adjust Download Shaper'),
+        o = moptDyn('general', form.Flag, 'adjust_dl_shaper_rate', _('Adjust Download Shaper'),
             _('Allow the daemon to actively change the download shaper rate. ' +
               'Disable to hold the download qdisc at its base rate and only ' +
               'measure (for example when another tool owns download shaping).'));
         o.default = '1';
 
-        o = mopt('general', form.Flag, 'adjust_ul_shaper_rate', _('Adjust Upload Shaper'),
+        o = moptDyn('general', form.Flag, 'adjust_ul_shaper_rate', _('Adjust Upload Shaper'),
             _('Allow the daemon to actively change the upload shaper rate. ' +
               'Disable to hold the upload qdisc at its base rate and only measure.'));
         o.default = '1';
 
-        mopt('general', form.Value, 'ping_bind_if', _('Ping Bind Interface'),
+        moptDyn('general', form.Value, 'ping_bind_if', _('Ping Bind Interface'),
             _('Bind the ICMP measurement socket to this interface ' +
               '(typically the same as the Upload Interface). ' +
               'Required for multi-WAN: without it, policy routing (mwan3) may send ' +
@@ -171,7 +204,7 @@ return view.extend({
               'Leave empty to follow the routing table (single-WAN).'));
 
         function rateOption(tab, name, label, description, def) {
-            var opt = mopt(tab, form.Value, name, label, description);
+            var opt = moptDyn(tab, form.Value, name, label, description);
             opt.datatype = 'uinteger';
             opt.default  = String(def);
             return opt;
@@ -335,7 +368,7 @@ return view.extend({
          * ════════════════════════════════════════════════════ */
 
         /* ── Pinger mode ──────────────────────────────── */
-        o = mopt('advanced', form.ListValue, 'ping_type',
+        o = moptDyn('advanced', form.ListValue, 'ping_type',
             _('Ping Type'),
             _('ICMP packet type used for OWD measurement.<br>' +
               '<strong>ICMP Echo (type 8)</strong>: measures RTT; OWD = RTT/2. ' +
@@ -351,7 +384,7 @@ return view.extend({
         o.value('0', _('ICMP Echo (type 8) – RTT/2, symmetric estimate'));
         o.value('1', _('ICMP Timestamp (type 13) – true per-direction OWD'));
 
-        o = mopt('advanced', form.Value, 'reflectors_file',
+        o = moptDyn('advanced', form.Value, 'reflectors_file',
             _('Reflectors File'),
             _('Path to a plain-text file of reflector IP addresses, one per line ' +
               '(lines starting with <code>#</code> are ignored). ' +
@@ -364,85 +397,85 @@ return view.extend({
         o.placeholder = '/etc/antilag/timestamp-reflectors.txt';
 
         /* ── Pinger tuning ────────────────────────────── */
-        o = mopt('advanced', form.Value, 'no_pingers',
+        o = moptDyn('advanced', form.Value, 'no_pingers',
             _('Number of Active Pingers'),
             _('How many reflectors to ping concurrently.'));
         o.datatype = 'range(1,20)';
         o.default  = '6';
 
-        o = mopt('advanced', form.Value, 'reflector_ping_interval_s',
+        o = moptDyn('advanced', form.Value, 'reflector_ping_interval_s',
             _('Ping Interval (s)'),
             _('Time between pings to each individual reflector.'));
         o.datatype = 'float';
         o.default  = '0.3';
 
-        o = mopt('advanced', form.DynamicList, 'reflectors',
+        o = moptDyn('advanced', form.DynamicList, 'reflectors',
             _('Reflectors'),
             _('ICMP ping targets. The first <em>N</em> (= Number of Active Pingers) ' +
               'are active; the rest are spares for automatic replacement.'));
         o.datatype = 'or(ipaddr, hostname)';
 
-        o = mopt('advanced', form.Value, 'dl_owd_delta_delay_thr_ms',
+        o = moptDyn('advanced', form.Value, 'dl_owd_delta_delay_thr_ms',
             _('DL Delay Threshold (ms)'),
             _('OWD delta above this counts as a bufferbloat event for download.'));
         o.datatype = 'float'; o.default = '30.0';
 
-        o = mopt('advanced', form.Value, 'ul_owd_delta_delay_thr_ms',
+        o = moptDyn('advanced', form.Value, 'ul_owd_delta_delay_thr_ms',
             _('UL Delay Threshold (ms)'),
             _('OWD delta above this counts as a bufferbloat event for upload. ' +
               'The upload counterpart of the DL delay threshold.'));
         o.datatype = 'float'; o.default = '30.0';
 
-        o = mopt('advanced', form.Value, 'dl_avg_owd_delta_max_adjust_up_thr_ms',
+        o = moptDyn('advanced', form.Value, 'dl_avg_owd_delta_max_adjust_up_thr_ms',
             _('DL Avg OWD Max Adjust-Up Threshold (ms)'),
             _('At or below this average OWD delta, rate increases at maximum speed.'));
         o.datatype = 'float'; o.default = '10.0';
 
-        o = mopt('advanced', form.Value, 'ul_avg_owd_delta_max_adjust_up_thr_ms',
+        o = moptDyn('advanced', form.Value, 'ul_avg_owd_delta_max_adjust_up_thr_ms',
             _('UL Avg OWD Max Adjust-Up Threshold (ms)'),
             _('Upload counterpart of the adjust-up threshold: at or below this ' +
               'average OWD delta, the upload rate increases at maximum speed.'));
         o.datatype = 'float'; o.default = '10.0';
 
-        o = mopt('advanced', form.Value, 'dl_avg_owd_delta_max_adjust_down_thr_ms',
+        o = moptDyn('advanced', form.Value, 'dl_avg_owd_delta_max_adjust_down_thr_ms',
             _('DL Avg OWD Max Adjust-Down Threshold (ms)'),
             _('At or above this average OWD delta, rate decreases at maximum speed.'));
         o.datatype = 'float'; o.default = '60.0';
 
-        o = mopt('advanced', form.Value, 'ul_avg_owd_delta_max_adjust_down_thr_ms',
+        o = moptDyn('advanced', form.Value, 'ul_avg_owd_delta_max_adjust_down_thr_ms',
             _('UL Avg OWD Max Adjust-Down Threshold (ms)'),
             _('Upload counterpart of the adjust-down threshold: at or above this ' +
               'average OWD delta, the upload rate is reduced at maximum severity.'));
         o.datatype = 'float'; o.default = '60.0';
 
-        o = mopt('advanced', form.Value, 'alpha_baseline_increase',
+        o = moptDyn('advanced', form.Value, 'alpha_baseline_increase',
             _('Baseline EWMA α (increase)'),
             _('Small value → slow upward tracking (0.001 = very slow).'));
         o.datatype = 'float'; o.default = '0.001';
 
-        o = mopt('advanced', form.Value, 'alpha_baseline_decrease',
+        o = moptDyn('advanced', form.Value, 'alpha_baseline_decrease',
             _('Baseline EWMA α (decrease)'),
             _('Large value → fast relaxation when OWD drops (0.9 = fast).'));
         o.datatype = 'float'; o.default = '0.9';
 
-        o = mopt('advanced', form.Value, 'alpha_delta_ewma',
+        o = moptDyn('advanced', form.Value, 'alpha_delta_ewma',
             _('Delta EWMA α'),
             _('Smoothing factor for the OWD delta above baseline. This smoothed ' +
               'value scales how hard the rate is reduced on bufferbloat. Small = ' +
               'steadier and slower to react; large = reacts faster to spikes.'));
         o.datatype = 'float'; o.default = '0.095';
 
-        o = mopt('advanced', form.Value, 'shaper_rate_min_adjust_down_bufferbloat',
+        o = moptDyn('advanced', form.Value, 'shaper_rate_min_adjust_down_bufferbloat',
             _('Min Rate Down Factor (bufferbloat)'),
             _('Minimum multiplier on bufferbloat (e.g. 0.99 = −1%).'));
         o.datatype = 'float'; o.default = '0.99';
 
-        o = mopt('advanced', form.Value, 'shaper_rate_max_adjust_down_bufferbloat',
+        o = moptDyn('advanced', form.Value, 'shaper_rate_max_adjust_down_bufferbloat',
             _('Max Rate Down Factor (bufferbloat)'),
             _('Maximum multiplier on severe bufferbloat (e.g. 0.75 = −25%).'));
         o.datatype = 'float'; o.default = '0.75';
 
-        o = mopt('advanced', form.Value, 'shaper_rate_min_adjust_up_load_high',
+        o = moptDyn('advanced', form.Value, 'shaper_rate_min_adjust_up_load_high',
             _('Min Rate Up Factor (high load)'),
             _('Smallest multiplier applied when increasing the rate under high ' +
               'load. The increase scales down toward this value as the average ' +
@@ -450,99 +483,99 @@ return view.extend({
               'the limit).'));
         o.datatype = 'float'; o.default = '1.0';
 
-        o = mopt('advanced', form.Value, 'shaper_rate_max_adjust_up_load_high',
+        o = moptDyn('advanced', form.Value, 'shaper_rate_max_adjust_up_load_high',
             _('Max Rate Up Factor (high load)'),
             _('Largest multiplier applied when increasing the rate under high ' +
               'load (e.g. 1.04 = +4% per adjustment). Applied in full while the ' +
               'average OWD delta is at or below the adjust-up threshold.'));
         o.datatype = 'float'; o.default = '1.04';
 
-        o = mopt('advanced', form.Value, 'shaper_rate_adjust_down_load_low',
+        o = moptDyn('advanced', form.Value, 'shaper_rate_adjust_down_load_low',
             _('Rate Down Factor (low load)'),
             _('Multiplier used to step the rate back down toward the base rate ' +
               'when load is low or idle (e.g. 0.99 = −1% per adjustment).'));
         o.datatype = 'float'; o.default = '0.99';
 
-        o = mopt('advanced', form.Value, 'shaper_rate_adjust_up_load_low',
+        o = moptDyn('advanced', form.Value, 'shaper_rate_adjust_up_load_low',
             _('Rate Up Factor (low load)'),
             _('Multiplier used to step the rate back up toward the base rate when ' +
               'the current rate is below base and load is low (e.g. 1.01 = +1% ' +
               'per adjustment).'));
         o.datatype = 'float'; o.default = '1.01';
 
-        o = mopt('advanced', form.Value, 'bufferbloat_detection_window',
+        o = moptDyn('advanced', form.Value, 'bufferbloat_detection_window',
             _('Bufferbloat Detection Window'),
             _('Number of consecutive ping samples examined for delay.'));
         o.datatype = 'uinteger'; o.default = '6';
 
-        o = mopt('advanced', form.Value, 'bufferbloat_detection_thr',
+        o = moptDyn('advanced', form.Value, 'bufferbloat_detection_thr',
             _('Bufferbloat Detection Threshold'),
             _('How many samples in the window must show delay before bufferbloat is declared.'));
         o.datatype = 'uinteger'; o.default = '3';
 
-        o = mopt('advanced', form.Value, 'high_load_thr',
+        o = moptDyn('advanced', form.Value, 'high_load_thr',
             _('High Load Threshold (fraction)'),
             _('Fraction of current shaper rate above which load is "high" (e.g. 0.75).'));
         o.datatype = 'float'; o.default = '0.75';
 
-        o = mopt('advanced', form.Value, 'bufferbloat_refractory_period_ms',
+        o = moptDyn('advanced', form.Value, 'bufferbloat_refractory_period_ms',
             _('Bufferbloat Refractory Period (ms)'),
             _('Minimum time between consecutive rate-down adjustments.'));
         o.datatype = 'uinteger'; o.default = '300';
 
-        o = mopt('advanced', form.Value, 'decay_refractory_period_ms',
+        o = moptDyn('advanced', form.Value, 'decay_refractory_period_ms',
             _('Decay Refractory Period (ms)'),
             _('Minimum time between idle/low-load rate adjustments.'));
         o.datatype = 'uinteger'; o.default = '1000';
 
-        o = mopt('advanced', form.Flag, 'enable_sleep_function',
+        o = moptDyn('advanced', form.Flag, 'enable_sleep_function',
             _('Enable Sleep on Sustained Idle'),
             _('Pause the active pingers after the link has been idle for the ' +
               'sustained-idle threshold. Saves CPU and ICMP traffic; pinging ' +
               'resumes automatically when traffic returns.'));
         o.default = '1';
 
-        o = mopt('advanced', form.Value, 'sustained_idle_sleep_thr_s',
+        o = moptDyn('advanced', form.Value, 'sustained_idle_sleep_thr_s',
             _('Idle Sleep Threshold (s)'),
             _('How long both directions must stay below the connection-active ' +
               'threshold before the sleep function pauses the pingers.'));
         o.datatype = 'float'; o.default = '60.0';
 
-        o = mopt('advanced', form.Flag, 'min_shaper_rates_enforcement',
+        o = moptDyn('advanced', form.Flag, 'min_shaper_rates_enforcement',
             _('Enforce Min Rates on Idle / Stall'),
             _('When enabled, the shaper will not drop below the configured minimum rates.'));
         o.default = '0';
 
-        o = mopt('advanced', form.Value, 'stall_detection_thr',
+        o = moptDyn('advanced', form.Value, 'stall_detection_thr',
             _('Stall Detection Threshold (missed pings)'),
             _('Number of missed ping rounds (per-reflector intervals) without any ' +
               'reflector response before the connection is declared stalled. The ' +
               'stall state is shown in the live status block.'));
         o.datatype = 'uinteger'; o.default = '5';
 
-        o = mopt('advanced', form.Value, 'connection_stall_thr_kbps',
+        o = moptDyn('advanced', form.Value, 'connection_stall_thr_kbps',
             _('Connection Stall Rate Threshold (kbps)'),
             _('If both DL and UL are below this while pings time out, declare a stall.'));
         o.datatype = 'uinteger'; o.default = '10';
 
-        o = mopt('advanced', form.Value, 'global_ping_response_timeout_s',
+        o = moptDyn('advanced', form.Value, 'global_ping_response_timeout_s',
             _('Global Ping Response Timeout (s)'),
             _('Ultimate no-response guard: if no reflector has replied for this ' +
               'long, the connection is treated as down and the shaper rates are ' +
               'dropped to their minimums. Default: 10.'));
         o.datatype = 'float'; o.default = '10.0';
 
-        o = mopt('advanced', form.Value, 'startup_wait_s',
+        o = moptDyn('advanced', form.Value, 'startup_wait_s',
             _('Startup Wait (s)'),
             _('Seconds to pause after start before adjusting rates.'));
         o.datatype = 'float'; o.default = '0.0';
 
-        o = mopt('advanced', form.Value, 'monitor_achieved_rates_interval_ms',
+        o = moptDyn('advanced', form.Value, 'monitor_achieved_rates_interval_ms',
             _('Rate Monitor Interval (ms)'),
             _('How often achieved DL/UL rates are sampled from sysfs.'));
         o.datatype = 'uinteger'; o.default = '200';
 
-        o = mopt('advanced', form.Value, 'if_up_check_interval_s',
+        o = moptDyn('advanced', form.Value, 'if_up_check_interval_s',
             _('Interface Up-Check Interval (s)'),
             _('How often the WAN interface is checked for presence. If it ' +
               'disappears (e.g. a PPPoE/DHCP reconnect), shaping and pinging are ' +
@@ -552,42 +585,42 @@ return view.extend({
         /* ════════════════════════════════════════════════════
          * Reflector Health tab (modal)
          * ════════════════════════════════════════════════════ */
-        o = mopt('health', form.Value, 'reflector_health_check_interval_s',
+        o = moptDyn('health', form.Value, 'reflector_health_check_interval_s',
             _('Health Check Interval (s)'),
             _('How often each reflector is checked for missed responses.'));
         o.datatype = 'float'; o.default = '1';
 
-        o = mopt('health', form.Value, 'reflector_response_deadline_s',
+        o = moptDyn('health', form.Value, 'reflector_response_deadline_s',
             _('Response Deadline (s)'),
             _('A reflector is counted as non-responsive if it has not replied within this time.'));
         o.datatype = 'float'; o.default = '1';
 
-        o = mopt('health', form.Value, 'reflector_misbehaving_detection_window',
+        o = moptDyn('health', form.Value, 'reflector_misbehaving_detection_window',
             _('Misbehaving Detection Window (checks)'),
             _('Sliding window size for counting missed-response events per reflector.'));
         o.datatype = 'uinteger'; o.default = '60';
 
-        o = mopt('health', form.Value, 'reflector_misbehaving_detection_thr',
+        o = moptDyn('health', form.Value, 'reflector_misbehaving_detection_thr',
             _('Misbehaving Detection Threshold'),
             _('Missed responses within the window required to trigger automatic replacement.'));
         o.datatype = 'uinteger'; o.default = '3';
 
-        o = mopt('health', form.Value, 'reflector_replacement_interval_s',
+        o = moptDyn('health', form.Value, 'reflector_replacement_interval_s',
             _('Reflector Replacement Interval (s)'),
             _('Minimum time between automatic replacements. Default: 3600 (1 hour).'));
         o.datatype = 'uinteger'; o.default = '3600';
 
-        o = mopt('health', form.Value, 'reflector_comparison_interval_s',
+        o = moptDyn('health', form.Value, 'reflector_comparison_interval_s',
             _('Reflector Comparison Interval (s)'),
             _('How often active reflectors are compared against spare candidates.'));
         o.datatype = 'uinteger'; o.default = '60';
 
-        o = mopt('health', form.Value, 'reflector_sum_owd_baselines_delta_thr_ms',
+        o = moptDyn('health', form.Value, 'reflector_sum_owd_baselines_delta_thr_ms',
             _('OWD Baselines Sum Delta Threshold (ms)'),
             _('Replace a reflector if its OWD baseline sum exceeds a spare\'s by more than this.'));
         o.datatype = 'float'; o.default = '20.0';
 
-        o = mopt('health', form.Value, 'reflector_owd_delta_ewma_delta_thr_ms',
+        o = moptDyn('health', form.Value, 'reflector_owd_delta_ewma_delta_thr_ms',
             _('OWD EWMA Delta Threshold (ms)'),
             _('Replacement threshold based on the OWD-delta EWMA.'));
         o.datatype = 'float'; o.default = '10.0';

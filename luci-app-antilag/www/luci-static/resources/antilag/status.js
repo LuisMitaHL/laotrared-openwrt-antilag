@@ -14,9 +14,12 @@
  *
  * Multi-instance: every UCI 'antilag' section runs its own daemon
  * process with its own status file (/var/run/antilag-<section>.json).
+ * Static-mode sections have no daemon; their status file is written once
+ * by `antilag apply` and rendered as a compact fixed-rate block.
  *
  * Per-instance state logic (in priority order):
- *   1. status file exists and parses   → daemon running → stats + tin tables
+ *   1. status file exists and parses   → stats + tin tables (dynamic)
+ *                                        or compact block (static)
  *   2. file exists but content invalid → red parse-error row (never silent)
  *   3. file exists but unreadable      → red unreadable row (never silent)
  *   4. UCI enabled = 1 but no file     → enabled but not started / crashed
@@ -193,6 +196,38 @@ function buildSimpleTable(text, color) {
     ]);
 }
 
+/*
+ * buildStaticTable – compact block for a static (fixed-rate) instance.
+ * There is no daemon, so there are no live metrics: show the installed
+ * shaper rates and which directions are actually shaped.
+ */
+function buildStaticTable(st) {
+    function rate(active, kbps) {
+        return active ? fmtKbps(kbps) : '—';
+    }
+
+    return E('table', { 'class': 'table', 'id': 'antilag_status_table' }, [
+        E('tr', { 'class': 'tr table-titles' }, [
+            E('th', { 'class': 'th' }, _('Status')),
+            E('th', { 'class': 'th' }, _('DL Shaped')),
+            E('th', { 'class': 'th' }, _('UL Shaped')),
+            E('th', { 'class': 'th' }, _('Interfaces'))
+        ]),
+        E('tr', { 'class': 'tr' }, [
+            E('td', {
+                'class': 'td',
+                'style': 'font-weight:bold;color:var(--success-color-medium,#1a7f1a)'
+            }, _('Static')),
+            E('td', { 'class': 'td', 'style': 'font-weight:bold' },
+                rate(st.dl_active, st.shaper_dl_kbps)),
+            E('td', { 'class': 'td', 'style': 'font-weight:bold' },
+                rate(st.ul_active, st.shaper_ul_kbps)),
+            E('td', { 'class': 'td', 'style': 'color:var(--text-color-medium,#555)' },
+                (st.dl_if || '—') + ' / ' + (st.ul_if || '—'))
+        ])
+    ]);
+}
+
 /* ── Per-instance status block ───────────────────────────────── */
 
 function statusPath(sid) {
@@ -251,7 +286,19 @@ function buildInstanceBlock(inst) {
         [ E('h3', {}, _('Antilag') + ' – ' + inst.sid) ]);
 
     if (inst.exists && st && st.state) {
-        var parts = [ buildStatsTable(st) ];
+        var parts = [];
+
+        if (st.mode === 'static') {
+            parts.push(buildStaticTable(st));
+            parts.push(E('div', {
+                'style': 'color:var(--text-color-medium,#555);margin-top:0.5em'
+            }, _('Fixed-rate shaping active — no live metrics for static instances.')));
+            for (var s = 0; s < parts.length; s++)
+                wrap.appendChild(parts[s]);
+            return wrap;
+        }
+
+        parts.push(buildStatsTable(st));
 
         if (st.cake_dl && st.cake_dl.tin_cnt)
             parts.push(buildTinTable(_('Download') + ' (' + (st.dl_if || '') + ')', st.cake_dl));
@@ -271,7 +318,11 @@ function buildInstanceBlock(inst) {
     else if (inst.exists)
         wrap.appendChild(buildSimpleTable(_('Running – status unreadable'), 'var(--error-color-medium,#c00)'));
     else if (instanceEnabled(inst.sid))
-        wrap.appendChild(buildSimpleTable(_('Enabled – not running'), 'var(--warn-color-medium,#c07700)'));
+        wrap.appendChild(buildSimpleTable(
+            uci.get('antilag', inst.sid, 'mode') === 'static'
+                ? _('Enabled – not applied (waiting for interface)')
+                : _('Enabled – not running'),
+            'var(--warn-color-medium,#c07700)'));
     else
         wrap.appendChild(buildSimpleTable(_('Disabled'), 'var(--text-color-low,#888)'));
 

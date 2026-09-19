@@ -1,0 +1,71 @@
+#!/bin/sh
+#
+# /etc/hotplug.d/iface/25-antilag
+#
+# Re-apply STATIC antilag instances when their WAN interface goes down or
+# comes back up, mirroring how sqm-scripts handles interface events.
+#
+# Static instances are stateless: the fixed-rate CAKE qdiscs live in the
+# kernel and are wiped whenever the underlying device is recreated (PPPoE
+# reconnect, DHCP renew, modem re-registration).  This hook rebuilds them.
+#
+# Dynamic instances are deliberately ignored: their procd daemon watches
+# the interface itself (if_up_check_interval_s) and re-creates the full
+# adaptive setup, including pinger state, on recovery.
+
+[ -n "$ACTION" ] || exit 0
+[ "$ACTION" = "ifup" ] || [ "$ACTION" = "ifdown" ] || exit 0
+
+. /lib/functions.sh
+
+PROG=/usr/sbin/antilag
+[ -x "$PROG" ] || exit 0
+
+[ -x /etc/init.d/antilag ] && /etc/init.d/antilag enabled || exit 0
+
+# Collect every name this hotplug event may refer to: the netdev itself,
+# the logical interface, its ifname(s) and its explicit device, if set.
+ALL_DEVICES="$DEVICE $INTERFACE"
+if [ -n "$INTERFACE" ]; then
+    ifnames=$(uci -q get "network.$INTERFACE.ifname")
+    [ -n "$ifnames" ] && ALL_DEVICES="$ALL_DEVICES $ifnames"
+    l3dev=$(uci -q get "network.$INTERFACE.device")
+    [ -n "$l3dev" ] && ALL_DEVICES="$ALL_DEVICES $l3dev"
+fi
+
+[ -n "$(echo $ALL_DEVICES)" ] || exit 0
+
+matches_device() {
+    local needle="$1" dev
+
+    [ -n "$needle" ] || return 1
+    for dev in $ALL_DEVICES; do
+        [ "$dev" = "$needle" ] && return 0
+    done
+    return 1
+}
+
+handle_instance() {
+    local cfg="$1"
+    local enabled mode ul_if
+
+    config_get_bool enabled "$cfg" enabled 0
+    [ "$enabled" -eq 1 ] || return 0
+
+    config_get mode "$cfg" mode dynamic
+    [ "$mode" = "static" ] || return 0
+
+    config_get ul_if "$cfg" ul_if
+    matches_device "$ul_if" || return 0
+
+    if [ "$ACTION" = "ifup" ]; then
+        "$PROG" apply "$cfg" || \
+            logger -t antilag "hotplug: static apply failed for '$cfg'"
+    else
+        "$PROG" stop "$cfg"
+    fi
+    return 0
+}
+
+config_load antilag
+config_foreach handle_instance antilag
