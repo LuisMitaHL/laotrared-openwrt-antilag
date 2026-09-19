@@ -85,13 +85,13 @@ function fmtUs(us) {
 function loadCell(load, bb) {
     if (bb)
         return E('td', { 'class': 'td', 'style': 'color:var(--error-color-medium,#c00);font-weight:bold' },
-                 'Bufferbloat');
+                 _('Bufferbloat'));
     var map = {
-        high:    [ 'color:var(--warn-color-medium,#c07700);font-weight:bold', '▲ High'   ],
-        low:     [ 'color:var(--text-color-low,#888)',                        '▼ Low'    ],
-        running: [ 'color:var(--success-color-medium,#1a7f1a)',               '● Normal' ]
+        high:    [ 'color:var(--warn-color-medium,#c07700);font-weight:bold', _('▲ High')   ],
+        low:     [ 'color:var(--text-color-low,#888)',                        _('▼ Low')    ],
+        running: [ 'color:var(--success-color-medium,#1a7f1a)',               _('● Normal') ]
     };
-    var e = map[load] || [ '', '— Idle' ];
+    var e = map[load] || [ '', _('— Idle') ];
     return E('td', { 'class': 'td', 'style': e[0] }, e[1]);
 }
 
@@ -100,7 +100,8 @@ function loadCell(load, bb) {
 function buildStatsTable(st) {
     var stateColors = { running: 'var(--success-color-medium,#1a7f1a)', idle: 'var(--text-color-low,#888)', stall: 'var(--error-color-medium,#c00)' };
     var color = stateColors[st.state] || 'var(--text-color-low,#888)';
-    var label = st.state ? (st.state.charAt(0).toUpperCase() + st.state.slice(1)) : '?';
+    var stateLabels = { running: _('Running'), idle: _('Idle'), stall: _('Stall') };
+    var label = stateLabels[st.state] || '?';
     var owdDlStyle = (st.avg_owd_dl_ms10 > 100) ? 'color:var(--error-color-medium,#c00)' : 'color:var(--text-color-medium,#555)';
     var owdUlStyle = (st.avg_owd_ul_ms10 > 100) ? 'color:var(--error-color-medium,#c00)' : 'color:var(--text-color-medium,#555)';
 
