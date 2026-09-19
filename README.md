@@ -18,6 +18,7 @@ While the algorithm is excellent at mitigating bufferbloat, running a complex ba
 
 - **Native C implementation** — no bash scripts, no subshells, minimal CPU footprint
 - **Event-driven architecture** — uses `libubox/uloop` to eliminate polling busy-loops
+- **Multi-WAN** — one independent daemon instance per UCI section; shape any number of WAN links alongside policy routing (mwan3)
 - **Direct CAKE management** — creates and manages IFB + CAKE qdiscs entirely via raw NETLINK_ROUTE, with no dependency on SQM scripts
 - **Efficient system I/O** — reads network statistics directly from `/sys/class/net/.../statistics`
 - **Asynchronous pinging** — custom ICMP pinger supporting both Echo (type 8) and Timestamp (type 13) modes
@@ -102,6 +103,35 @@ config antilag 'primary'
 
 CAKE qdisc options such as `overhead`, `mpu`, `rtt`, `memlimit`, and `wash` are configured separately for DL and UL. Flow isolation mode can also be set independently per direction — for example `dual-dsthost` on ingress and `dual-srchost` on egress, which is the recommended setup for most home routers.
 
+### Multi-WAN (mwan3)
+
+The daemon supports any number of WAN links: **each UCI section is an independent instance** that shapes one WAN pair. Instances can be added and removed on the Services → Antilag page (or directly in `/etc/config/antilag`):
+
+```sh
+config antilag 'wan1'
+    option enabled                  '1'
+    option dl_if                    'ifb-wan1'
+    option ul_if                    'wan1'
+    option ping_bind_if             'wan1'
+    option base_dl_shaper_rate_kbps '50000'
+    option base_ul_shaper_rate_kbps '20000'
+
+config antilag 'wan2'
+    option enabled                  '1'
+    option dl_if                    'ifb-wan2'
+    option ul_if                    'wan2'
+    option ping_bind_if             'wan2'
+    option base_dl_shaper_rate_kbps '20000'
+    option base_ul_shaper_rate_kbps '10000'
+```
+
+Requirements and notes:
+
+- **Unique interface names** — each instance needs its own `dl_if` (IFB, e.g. `ifb-wan1`, created automatically) and `ul_if`. Never point two sections at the same `ul_if`.
+- **`ping_bind_if`** — binds the ICMP measurement socket to that interface (`SO_BINDTODEVICE`). Required for multi-WAN: without it, policy routing (mwan3) may send reflector pings out an arbitrary WAN, corrupting the per-WAN OWD measurement. Typically the same value as `ul_if`. Leave empty on single-WAN setups to follow the routing table.
+- **mwan3 interplay** — antilag only touches qdiscs; it does not conflict with mwan3's nftables marking or routing rules. mwan3 handles per-flow routing and load balancing, antilag handles per-WAN bufferbloat control. mwan3's own `track` pings are unaffected.
+- Each instance keeps its own reflector list and status file (`/var/run/antilag-<section>.json`), and shows up as a separate status block on the LuCI Overview page.
+
 ### 5G / LTE Notes
 
 On cellular links the UL scheduling latency is inherently higher and more variable than DL, even at idle, due to the base station grant request cycle. If your idle UL OWD delta appears elevated (5–10ms) with no load, this is normal radio behaviour and not a misconfiguration. Consider:
@@ -113,7 +143,7 @@ On cellular links the UL scheduling latency is inherently higher and more variab
 
 ## Live Status
 
-The LuCI Overview page displays a live status widget that polls every 3 seconds. When the daemon is running it shows:
+The LuCI Overview page displays a live status widget that polls every 3 seconds, with one status block per configured antilag instance. When a daemon is running it shows:
 
 | Field | Description |
 | :--- | :--- |
@@ -138,7 +168,7 @@ Below the status row, the widget shows **live per-tin CAKE statistics** (the net
 
 The header line also shows CAKE's capacity estimate and qdisc memory usage. Statistics are read from the kernel via an `RTM_GETQDISC` dump; they are only available for plain `cake` qdiscs and are omitted while the qdisc is down.
 
-The daemon writes `/var/run/antilag.json` every ~200ms, querying the kernel qdisc statistics on each tick. The file is removed on clean shutdown so the widget immediately reflects stopped state.
+The daemon writes `/var/run/antilag-<section>.json` every ~200ms, querying the kernel qdisc statistics on each tick. The file is removed on clean shutdown so the widget immediately reflects stopped state.
 
 ---
 
@@ -156,10 +186,10 @@ Watch the daemon adjust bandwidth in real time:
 logread -f -e antilag
 ```
 
-Inspect the live status JSON directly:
+Inspect the live status JSON directly (one file per instance):
 
 ```sh
-cat /var/run/antilag.json
+cat /var/run/antilag-*.json
 ```
 
 ---

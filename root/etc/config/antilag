@@ -10,6 +10,12 @@ config antilag 'primary'
     option adjust_dl_shaper_rate '1'
     option adjust_ul_shaper_rate '1'
 
+    # ping_bind_if: bind the ICMP measurement socket to this interface
+    # (SO_BINDTODEVICE). Required for multi-WAN (mwan3) so reflector
+    # pings exit the right WAN; typically the same as ul_if.
+    # Empty = unbound, packets follow the routing table (single-WAN).
+    # option ping_bind_if 'wan'
+
     # ── Shaper rates (kbps) ──────────────────────────────────
     option min_dl_shaper_rate_kbps  '5000'
     option base_dl_shaper_rate_kbps '20000'
