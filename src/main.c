@@ -292,13 +292,44 @@ static void write_status_file(autorate_t *ar)
      * Failures (qdisc not up yet, interface gone, foreign qdisc) simply
      * omit the respective section; the widget degrades gracefully.
      */
-    cake_qdisc_stats_t dl_stats, ul_stats;
+    cake_qdisc_stats_t dl_stats = { 0 }, ul_stats = { 0 };
     int have_dl = 0, have_ul = 0;
 
-    if (ar->tc_nl && ar->dl_setup_done)
+    /* TEMP DEBUG: one-shot log so we can see why stats are missing. */
+    static int dbg_dl_logged = 0, dbg_ul_logged = 0;
+
+    if (ar->tc_nl && ar->dl_setup_done) {
+        errno = 0;
         have_dl = (tc_cake_get_stats(ar->tc_nl, ar->cfg.dl_if, &dl_stats) == 0);
-    if (ar->tc_nl && ar->ul_setup_done)
+        if (!have_dl && !dbg_dl_logged) {
+            dbg_dl_logged = 1;
+            syslog(LOG_WARNING,
+                   "qdisc_stats DBG: DL %s failed: %m (setup=%d tin_cnt=%d)",
+                   ar->cfg.dl_if, ar->dl_setup_done, dl_stats.tin_cnt);
+        } else if (have_dl) {
+            dbg_dl_logged = 0;
+        }
+    } else if (!dbg_dl_logged) {
+        dbg_dl_logged = 1;
+        syslog(LOG_WARNING, "qdisc_stats DBG: DL skipped (tc_nl=%p setup=%d)",
+               (void *)ar->tc_nl, ar->dl_setup_done);
+    }
+    if (ar->tc_nl && ar->ul_setup_done) {
+        errno = 0;
         have_ul = (tc_cake_get_stats(ar->tc_nl, ar->cfg.ul_if, &ul_stats) == 0);
+        if (!have_ul && !dbg_ul_logged) {
+            dbg_ul_logged = 1;
+            syslog(LOG_WARNING,
+                   "qdisc_stats DBG: UL %s failed: %m (setup=%d tin_cnt=%d)",
+                   ar->cfg.ul_if, ar->ul_setup_done, ul_stats.tin_cnt);
+        } else if (have_ul) {
+            dbg_ul_logged = 0;
+        }
+    } else if (!dbg_ul_logged) {
+        dbg_ul_logged = 1;
+        syslog(LOG_WARNING, "qdisc_stats DBG: UL skipped (tc_nl=%p setup=%d)",
+               (void *)ar->tc_nl, ar->ul_setup_done);
+    }
 
     FILE *f = fopen(ar->status_tmp_path, "w");
     if (!f)
