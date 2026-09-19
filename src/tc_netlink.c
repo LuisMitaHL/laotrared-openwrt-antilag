@@ -1128,36 +1128,50 @@ int tc_cake_get_stats(tc_nl_ctx_t *ctx, const char *iface,
                (struct sockaddr *)&dst, sizeof(dst)) < 0)
         return -1;
 
-    /* ── Collect replies until NLMSG_DONE ────────────────────── */
+    /* ── Collect replies until NLMSG_DONE ──────────────────────
+     *
+     * A dump reply is multipart: one recv() datagram can pack several
+     * RTM_NEWQDISC messages plus the terminating NLMSG_DONE, so every
+     * message in the buffer must be walked (NLMSG_OK / NLMSG_NEXT).
+     * Parsing only the first header per recv() silently drops the rest
+     * (e.g. cake arriving after ingress on the same interface).
+     */
     memset(out, 0, sizeof(*out));
     int found = 0;
+    int done = 0;
 
     uint8_t rbuf[CAKE_DUMP_BUF_SIZE];
-    for (;;) {
+    while (!done) {
         ssize_t n = recv(ctx->fd, rbuf, sizeof(rbuf), 0);
         if (n < (ssize_t)NLMSG_HDRLEN)
             break;
 
         struct nlmsghdr *h = (struct nlmsghdr *)rbuf;
+        int rem = (int)n;
 
-        /* Skip unsolicited notifications (link events etc.) */
-        if (h->nlmsg_seq != nlh->nlmsg_seq)
-            continue;
+        for (; NLMSG_OK(h, rem); h = NLMSG_NEXT(h, rem)) {
+            /* Skip unsolicited notifications (link events etc.) */
+            if (h->nlmsg_seq != nlh->nlmsg_seq)
+                continue;
 
-        if (h->nlmsg_type == NLMSG_ERROR) {
-            struct nlmsgerr *err = (struct nlmsgerr *)NLMSG_DATA(h);
-            if (err->error) {
-                errno = -err->error;
-                return -1;
+            if (h->nlmsg_type == NLMSG_ERROR) {
+                struct nlmsgerr *err = (struct nlmsgerr *)NLMSG_DATA(h);
+                if (err->error) {
+                    errno = -err->error;
+                    return -1;
+                }
+                done = 1;
+                break;
             }
-            break;
+
+            if (h->nlmsg_type == NLMSG_DONE) {
+                done = 1;
+                break;
+            }
+
+            if (h->nlmsg_type == RTM_NEWQDISC)
+                found |= tc__parse_qdisc_msg(h, out);
         }
-
-        if (h->nlmsg_type == NLMSG_DONE)
-            break;
-
-        if (h->nlmsg_type == RTM_NEWQDISC)
-            found |= tc__parse_qdisc_msg(h, out);
     }
 
     if (!found) {
