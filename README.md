@@ -89,7 +89,7 @@ vi /etc/config/antilag
 The minimum required options are the interface names and rate limits. Ensure `dl_if` and `ul_if` match your router's actual interfaces — for typical setups, download traffic arrives on an IFB interface and upload on the physical WAN interface.
 
 ```
-config antilag 'primary'
+config antilag 'wan'
     option enabled                  '1'
     option dl_if                    'ifb4wan'
     option ul_if                    'wan'

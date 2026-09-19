@@ -1,4 +1,4 @@
-config antilag 'primary'
+config antilag 'wan'
     # ── Enable / disable ─────────────────────────────────────
     option enabled '0'
 

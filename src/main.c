@@ -1457,7 +1457,7 @@ static int instance_id_valid(const char *id)
 
 int main(int argc, char *argv[])
 {
-    const char *section = (argc > 1) ? argv[1] : "primary";
+    const char *section = (argc > 1) ? argv[1] : "wan";
 
     openlog("antilag", LOG_PID | LOG_NDELAY, LOG_DAEMON);
 
