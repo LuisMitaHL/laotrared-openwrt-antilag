@@ -87,12 +87,12 @@ Alternatively, edit the config file directly over SSH:
 vi /etc/config/antilag
 ```
 
-The minimum required options are the interface names and rate limits. Ensure `dl_if` and `ul_if` match your router's actual interfaces — for typical setups, download traffic arrives on an IFB interface and upload on the physical WAN interface.
+The minimum required options are the interface names and rate limits. Ensure `dl_if` and `ul_if` match your router's actual interfaces — for typical setups, download traffic arrives on an IFB interface and upload on the physical WAN interface. The LuCI page picks `ul_if` from the device list and generates `dl_if` automatically as `ifb-<ul_if>` (for example `ifb-wan`); when editing the config by hand any IFB name may be used.
 
 ```
 config antilag 'wan'
     option enabled                  '1'
-    option dl_if                    'ifb4wan'
+    option dl_if                    'ifb-wan'
     option ul_if                    'wan'
     option base_dl_shaper_rate_kbps '50000'
     option base_ul_shaper_rate_kbps '20000'

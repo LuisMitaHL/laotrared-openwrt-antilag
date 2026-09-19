@@ -4,6 +4,7 @@
 'require uci';
 'require ui';
 'require rpc';
+'require tools.widgets as widgets';
 'require antilag.status as antilagStatus';
 
 var callInitAction = rpc.declare({
@@ -149,10 +150,33 @@ return view.extend({
         o.value('static',  _('Static – fixed target rate (sqm-scripts style)'));
         o.rmempty = false;
 
-        o = s.taboption('general', form.Value, 'ul_if', _('Upload Interface'),
-            _('WAN-facing interface for egress shaping (e.g. <code>wan1</code>). ' +
-              'Must be unique per instance.'));
+        /*
+         * ul_if – WAN-facing egress interface, picked from LuCI's device
+         * list (the same widget sqm-scripts uses).  noaliases drops the
+         * logical-network aliases (@wan, …) because the daemon resolves
+         * this name against the kernel, and existing IFBs are filtered out
+         * since an IFB can never be the WAN interface.
+         */
+        o = s.taboption('general', widgets.DeviceSelect, 'ul_if',
+            _('Upload Interface'),
+            _('WAN-facing interface for egress shaping, chosen from the ' +
+              'available devices (e.g. <code>wan</code>). ' +
+              'Must be unique per instance. The download IFB interface is ' +
+              'generated from this value as <code>ifb-&lt;interface&gt;</code>.'));
         o.rmempty = false;
+        o.noaliases = true;
+        o.filter = function(section_id, value) {
+            return !/^ifb/.test(value);
+        };
+        /* Keep the derived dl_if field in sync while the modal is open.
+         * The lookup is scoped to this option's own form map so it always
+         * finds the visible modal's field, never a hidden stacked one. */
+        o.onchange = function(ev, section_id, value) {
+            var el = this.map.findElement('id',
+                'widget.cbid.%s.%s.dl_if'.format(this.map.config, section_id));
+            if (el)
+                el.value = value ? 'ifb-' + value : '';
+        };
 
         o = s.taboption('general', form.Value, 'base_dl_shaper_rate_kbps',
             _('Base Download Rate (kbps)'),
@@ -183,12 +207,31 @@ return view.extend({
         /* ════════════════════════════════════════════════════
          * General tab (modal)
          * ════════════════════════════════════════════════════ */
+        /*
+         * dl_if – IFB interface, always generated from ul_if as
+         * ifb-<ul_if> (the sqm-scripts model: e.g. ul_if "wan" gives
+         * "ifb-wan").  The field is read-only; both cfgvalue() and
+         * formvalue() derive the name so a stale value in UCI is corrected
+         * on the next save, and forcewrite ensures it is persisted even
+         * when nothing else changed.
+         */
         o = mopt('general', form.Value, 'dl_if',
             _('Download Interface'),
-            _('IFB interface that carries shaped ingress traffic (e.g. <code>ifb-wan1</code>). ' +
-              'Created automatically at startup if it does not exist. ' +
-              'Must be unique per instance.'));
+            _('IFB interface that carries shaped ingress traffic ' +
+              '(<code>ifb-wan</code> when the upload interface is ' +
+              '<code>wan</code>). Generated automatically from the Upload ' +
+              'Interface and created by the daemon at startup if it does ' +
+              'not exist.'));
+        o.readonly = true;
+        o.forcewrite = true;
         o.rmempty = false;
+        o.cfgvalue = function(section_id) {
+            var ul = uci.get('antilag', section_id, 'ul_if');
+            return ul ? 'ifb-' + ul : null;
+        };
+        o.formvalue = function(section_id) {
+            return this.cfgvalue(section_id);
+        };
 
         o = moptDyn('general', form.Flag, 'adjust_dl_shaper_rate', _('Adjust Download Shaper'),
             _('Allow the daemon to actively change the download shaper rate. ' +

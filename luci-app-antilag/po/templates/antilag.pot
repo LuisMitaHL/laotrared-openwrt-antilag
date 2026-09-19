@@ -398,11 +398,11 @@ msgid ""
 "active; the rest are spares for automatic replacement."
 msgstr ""
 
-#: luci-app-antilag/www/luci-static/resources/view/antilag.js:150
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:218
 msgid ""
-"IFB interface that carries shaped ingress traffic (e.g. <code>ifb-wan1</"
-"code>). Created automatically at startup if it does not exist. Must be "
-"unique per instance."
+"IFB interface that carries shaped ingress traffic (<code>ifb-wan</code> when "
+"the upload interface is <code>wan</code>). Generated automatically from the "
+"Upload Interface and created by the daemon at startup if it does not exist."
 msgstr ""
 
 #: luci-app-antilag/www/luci-static/resources/antilag/status.js:103
@@ -962,10 +962,11 @@ msgstr ""
 msgid "Uptime"
 msgstr ""
 
-#: luci-app-antilag/www/luci-static/resources/view/antilag.js:116
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:160
 msgid ""
-"WAN-facing interface for egress shaping (e.g. <code>wan1</code>). Must be "
-"unique per instance."
+"WAN-facing interface for egress shaping, chosen from the available devices "
+"(e.g. <code>wan</code>). Must be unique per instance. The download IFB "
+"interface is generated from this value as <code>ifb-&lt;interface&gt;</code>."
 msgstr ""
 
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:513

@@ -496,15 +496,16 @@ msgstr ""
 "Destinos de ping ICMP. Los primeros <em>N</em> (= Número de pingers activos) "
 "están activos; el resto son de reserva para el reemplazo automático."
 
-#: luci-app-antilag/www/luci-static/resources/view/antilag.js:150
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:218
 msgid ""
-"IFB interface that carries shaped ingress traffic (e.g. <code>ifb-wan1</"
-"code>). Created automatically at startup if it does not exist. Must be "
-"unique per instance."
+"IFB interface that carries shaped ingress traffic (<code>ifb-wan</code> when "
+"the upload interface is <code>wan</code>). Generated automatically from the "
+"Upload Interface and created by the daemon at startup if it does not exist."
 msgstr ""
-"Interfaz IFB que transporta el tráfico de entrada modelado (p. ej. <code>ifb-"
-"wan1</code>). Se crea automáticamente al iniciar si no existe. Debe ser "
-"única por instancia."
+"Interfaz IFB que transporta el tráfico de entrada modelado (<code>ifb-wan</"
+"code> cuando la interfaz de subida es <code>wan</code>). Se genera "
+"automáticamente a partir de la interfaz de subida y el daemon la crea al "
+"iniciar si no existe."
 
 #: luci-app-antilag/www/luci-static/resources/antilag/status.js:103
 msgid "Idle"
@@ -1173,13 +1174,16 @@ msgstr ""
 msgid "Uptime"
 msgstr "Tiempo activo"
 
-#: luci-app-antilag/www/luci-static/resources/view/antilag.js:116
+#: luci-app-antilag/www/luci-static/resources/view/antilag.js:160
 msgid ""
-"WAN-facing interface for egress shaping (e.g. <code>wan1</code>). Must be "
-"unique per instance."
+"WAN-facing interface for egress shaping, chosen from the available devices "
+"(e.g. <code>wan</code>). Must be unique per instance. The download IFB "
+"interface is generated from this value as <code>ifb-&lt;interface&gt;</code>."
 msgstr ""
-"Interfaz orientada a la WAN para modelar la salida (p. ej. <code>wan1</"
-"code>). Debe ser única por instancia."
+"Interfaz orientada a la WAN para modelar la salida, elegida entre los "
+"dispositivos disponibles (p. ej. <code>wan</code>). Debe ser única por "
+"instancia. La interfaz IFB de bajada se genera a partir de este valor como "
+"<code>ifb-&lt;interfaz&gt;</code>."
 
 #: luci-app-antilag/www/luci-static/resources/view/antilag.js:513
 msgid ""
