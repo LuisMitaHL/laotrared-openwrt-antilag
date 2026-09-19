@@ -196,7 +196,7 @@ The LuCI Overview page displays a live status widget that polls every 3 seconds,
 | OWD DL / UL Δ | One-way delay delta above baseline — turns red above +10ms |
 | Uptime | Time since daemon started |
 
-Below the status row, the widget can show **live per-tin CAKE statistics** (the netlink equivalent of `tc -s qdisc show`) for the download (IFB) and upload (WAN) qdiscs, one table per direction. These tables are **hidden by default** — enable them with the *Show CAKE tin statistics* checkbox on the Services → Antilag page (the choice is remembered per browser):
+The Services → Antilag page shows the same basic status and can additionally show **live per-tin CAKE statistics** (the netlink equivalent of `tc -s qdisc show`) for the download (IFB) and upload (WAN) qdiscs, one table per direction. These tables are **hidden by default** — enable them with the *Show CAKE tin statistics* checkbox on that page (the choice is remembered per browser). The Overview widget never shows them; it renders the basic status data only.
 
 | Field | Description |
 | :--- | :--- |
@@ -209,8 +209,6 @@ Below the status row, the widget can show **live per-tin CAKE statistics** (the 
 | Avg Delay | Average queuing delay in the tin |
 
 The header line also shows CAKE's capacity estimate and qdisc memory usage. Statistics are read from the kernel via an `RTM_GETQDISC` dump; they are only available for plain `cake` qdiscs and are omitted while the qdisc is down.
-
-The same live status is also shown on the Services → Antilag page.
 
 The daemon writes `/var/run/antilag-<section>.json` every ~200ms, querying the kernel qdisc statistics on each tick. The file is removed on clean shutdown so the widget immediately reflects stopped state.
 

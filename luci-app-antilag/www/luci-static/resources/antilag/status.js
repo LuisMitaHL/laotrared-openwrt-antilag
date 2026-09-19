@@ -12,9 +12,11 @@
  * every POLL_MS.  A MutationObserver stops the poller when the container
  * leaves the DOM (LuCI swaps status includes / page nodes).
  *
- * The per-tin CAKE tables are opt-in: `options.tinToggle` (set only by
- * the Antilag settings page) renders the checkbox controlling them, and
- * the choice is remembered per browser in localStorage.
+ * The per-tin CAKE tables are only available on the Antilag settings
+ * page: `options.tinToggle` renders the checkbox controlling them and
+ * the choice is remembered per browser in localStorage.  The Overview
+ * widget passes no options and therefore always renders the basic
+ * status data only.
  *
  * Multi-instance: every UCI 'antilag' section runs its own daemon
  * process with its own status file (/var/run/antilag-<section>.json).
@@ -361,7 +363,7 @@ function buildInstanceBlock(inst, withTins) {
 
 var POLL_MS = 3000;
 
-function startPoller(container) {
+function startPoller(container, allowTins) {
     function poll() {
         uci.load('antilag').then(function() {
             var sections = uci.sections('antilag', 'antilag');
@@ -377,7 +379,7 @@ function startPoller(container) {
                     container.appendChild(E('div', { 'class': 'cbi-section' },
                         E('p', {}, _('No antilag instances configured.'))));
 
-                var withTins = showCakeTins();
+                var withTins = allowTins && showCakeTins();
                 results.forEach(function(inst) {
                     container.appendChild(buildInstanceBlock(inst, withTins));
                 });
@@ -399,9 +401,10 @@ return baseclass.extend({
      * per-instance status blocks and start the poll loop.  Polling
      * stops automatically once the container is removed from the DOM.
      *
-     * options.tinToggle – when true, render the "Show CAKE tin
-     * statistics" checkbox above the status blocks.  Only the Antilag
-     * settings page opts in; the Overview widget never shows it.
+     * options.tinToggle – when true, the per-tin CAKE tables may be
+     * shown and the "Show CAKE tin statistics" checkbox is rendered.
+     * Only the Antilag settings page opts in; the Overview widget
+     * always shows the basic status data only.
      */
     render: function(container, options) {
         options = options || {};
@@ -443,7 +446,7 @@ return baseclass.extend({
             container.appendChild(content);
         }
 
-        poller = startPoller(content);
+        poller = startPoller(content, !!options.tinToggle);
 
         var observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(m) {
