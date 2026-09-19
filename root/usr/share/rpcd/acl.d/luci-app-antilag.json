@@ -4,7 +4,8 @@
         "read": {
             "uci": [ "antilag" ],
             "file": {
-                "/var/run/antilag-*.json": [ "read", "stat" ]
+                "/var/run/antilag-*.json": [ "read", "stat" ],
+                "/tmp/run/antilag-*.json": [ "read", "stat" ]
             },
             "ubus": {
                 "file":    [ "read", "stat" ],
