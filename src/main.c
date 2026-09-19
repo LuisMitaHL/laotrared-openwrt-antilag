@@ -236,10 +236,69 @@ static const char *state_str(int s)
     }
 }
 
+/*
+ * fprint_qdisc_stats – emit live per-tin CAKE statistics as a JSON object.
+ * Called for each direction (dl/ul) that has a running CAKE qdisc.
+ * Preceded by a comma so it slots into the status document directly.
+ */
+static void fprint_qdisc_stats(FILE *f, const char *key,
+                               const cake_qdisc_stats_t *st)
+{
+    fprintf(f,
+        ",\n"
+        "  \"%s\": {\n"
+        "    \"kind\": \"%s\",\n"
+        "    \"tin_cnt\": %d,\n"
+        "    \"capacity_bps\": %llu,\n"
+        "    \"memory_limit\": %u,\n"
+        "    \"memory_used\": %u,\n"
+        "    \"active_queues\": %u,\n"
+        "    \"tins\": [\n",
+        key, st->kind, st->tin_cnt,
+        (unsigned long long)st->capacity_bps,
+        st->memory_limit, st->memory_used, st->active_queues);
+
+    for (int i = 0; i < st->tin_cnt; i++) {
+        const cake_tin_stats_t *t = &st->tins[i];
+        fprintf(f,
+            "      { \"threshold_bps\": %llu, \"sent_packets\": %u, \"sent_bytes\": %llu, "
+            "\"dropped_packets\": %u, \"dropped_bytes\": %llu, "
+            "\"ecn_packets\": %u, \"ecn_bytes\": %llu, "
+            "\"backlog_bytes\": %u, \"target_us\": %u, \"interval_us\": %u, "
+            "\"peak_delay_us\": %u, \"avg_delay_us\": %u, \"base_delay_us\": %u, "
+            "\"way_misses\": %u, \"way_collisions\": %u, "
+            "\"sparse_flows\": %u, \"bulk_flows\": %u, \"unresp_flows\": %u }%s\n",
+            (unsigned long long)t->threshold_bps,
+            t->sent_packets, (unsigned long long)t->sent_bytes,
+            t->dropped_packets, (unsigned long long)t->dropped_bytes,
+            t->ecn_packets, (unsigned long long)t->ecn_bytes,
+            t->backlog_bytes, t->target_us, t->interval_us,
+            t->peak_delay_us, t->avg_delay_us, t->base_delay_us,
+            t->way_misses, t->way_collisions,
+            t->sparse_flows, t->bulk_flows, t->unresp_flows,
+            (i + 1 < st->tin_cnt) ? "," : "");
+    }
+
+    fprintf(f, "    ]\n  }");
+}
+
 static void write_status_file(autorate_t *ar)
 {
     static const char *path     = "/var/run/antilag.json";
     static const char *path_tmp = "/var/run/antilag.json.tmp";
+
+    /*
+     * Query live qdisc statistics from the kernel for each direction.
+     * Failures (qdisc not up yet, interface gone, foreign qdisc) simply
+     * omit the respective section; the widget degrades gracefully.
+     */
+    cake_qdisc_stats_t dl_stats, ul_stats;
+    int have_dl = 0, have_ul = 0;
+
+    if (ar->tc_nl && ar->dl_setup_done)
+        have_dl = (tc_cake_get_stats(ar->tc_nl, ar->cfg.dl_if, &dl_stats) == 0);
+    if (ar->tc_nl && ar->ul_setup_done)
+        have_ul = (tc_cake_get_stats(ar->tc_nl, ar->cfg.ul_if, &ul_stats) == 0);
 
     FILE *f = fopen(path_tmp, "w");
     if (!f)
@@ -267,8 +326,7 @@ static void write_status_file(autorate_t *ar)
         "  \"avg_owd_dl_ms10\": %ld,\n"
         "  \"avg_owd_ul_ms10\": %ld,\n"
         "  \"active_reflectors\": %d,\n"
-        "  \"uptime_s\": %lld\n"
-        "}\n",
+        "  \"uptime_s\": %lld",
         ar->cfg.instance_id,
         state_str(ar->main_state),
         ar->link_up,
@@ -287,6 +345,13 @@ static void write_status_file(autorate_t *ar)
         ar->no_active_reflectors,
         (long long)uptime_s
     );
+
+    if (have_dl)
+        fprint_qdisc_stats(f, "cake_dl", &dl_stats);
+    if (have_ul)
+        fprint_qdisc_stats(f, "cake_ul", &ul_stats);
+
+    fprintf(f, "\n}\n");
 
     fclose(f);
     rename(path_tmp, path);

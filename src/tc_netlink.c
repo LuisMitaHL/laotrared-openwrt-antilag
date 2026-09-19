@@ -19,6 +19,7 @@
 
 #include "tc_netlink.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -872,4 +873,297 @@ void tc_ul_teardown(tc_nl_ctx_t *ctx, const char *wan_if)
         tc__qdisc_del(ctx, wan_idx, TC_H_ROOT, 0);
 
     syslog(LOG_INFO, "tc_ul_teardown: UL path removed (%s)", wan_if);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+ * Public: qdisc statistics dump (per-tin stats)
+ * ════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * sch_cake exposes statistics through the TCA_STATS2 → TCA_STATS_APP
+ * netlink attribute nest, produced by its .dump_stats callback:
+ *
+ *   TCA_STATS2
+ *     TCA_STATS_APP
+ *       TCA_CAKE_STATS_*            (qdisc-wide: capacity, memory, …)
+ *       TCA_CAKE_STATS_TIN_STATS    (nest)
+ *         [1..N]                    (one nest per tin)
+ *           TCA_CAKE_TIN_STATS_*    (u32, or u64 with PAD)
+ *
+ * This is the netlink equivalent of `tc -s qdisc show dev <if> cake`.
+ * Note: only plain "cake" implements .dump_stats — a cake-mq root qdisc
+ * has no per-tin statistics at all.
+ */
+
+/* TCA_CAKE_STATS_* attribute values (linux/pkt_sched.h). */
+#ifndef TCA_CAKE_STATS_TIN_STATS
+#define TCA_CAKE_STATS_PAD              1
+#define TCA_CAKE_STATS_CAPACITY_ESTIMATE64 2
+#define TCA_CAKE_STATS_MEMORY_LIMIT     3
+#define TCA_CAKE_STATS_MEMORY_USED      4
+#define TCA_CAKE_STATS_TIN_STATS        10
+#define TCA_CAKE_STATS_ACTIVE_QUEUES    17
+#endif
+
+/* TCA_CAKE_TIN_STATS_* attribute values (linux/pkt_sched.h). */
+#ifndef TCA_CAKE_TIN_STATS_PAD
+#define TCA_CAKE_TIN_STATS_PAD                  1
+#define TCA_CAKE_TIN_STATS_SENT_PACKETS         2
+#define TCA_CAKE_TIN_STATS_SENT_BYTES64         3
+#define TCA_CAKE_TIN_STATS_DROPPED_PACKETS      4
+#define TCA_CAKE_TIN_STATS_DROPPED_BYTES64      5
+#define TCA_CAKE_TIN_STATS_ECN_MARKED_PACKETS   8
+#define TCA_CAKE_TIN_STATS_ECN_MARKED_BYTES64   9
+#define TCA_CAKE_TIN_STATS_BACKLOG_BYTES        11
+#define TCA_CAKE_TIN_STATS_THRESHOLD_RATE64     12
+#define TCA_CAKE_TIN_STATS_TARGET_US            13
+#define TCA_CAKE_TIN_STATS_INTERVAL_US          14
+#define TCA_CAKE_TIN_STATS_WAY_MISSES           16
+#define TCA_CAKE_TIN_STATS_WAY_COLLISIONS       17
+#define TCA_CAKE_TIN_STATS_PEAK_DELAY_US        18
+#define TCA_CAKE_TIN_STATS_AVG_DELAY_US         19
+#define TCA_CAKE_TIN_STATS_BASE_DELAY_US        20
+#define TCA_CAKE_TIN_STATS_SPARSE_FLOWS         21
+#define TCA_CAKE_TIN_STATS_BULK_FLOWS           22
+#define TCA_CAKE_TIN_STATS_UNRESPONSIVE_FLOWS   23
+#endif
+
+#ifndef TCA_STATS_APP
+#define TCA_STATS_APP 4
+#endif
+
+/* Largest possible dump reply: 8 tins × ~25 attrs ≈ 3 KiB. */
+#define CAKE_DUMP_BUF_SIZE 8192
+
+static uint32_t nla_get_u32_val(const struct nlattr *a)
+{
+    uint32_t v;
+    memcpy(&v, (const char *)a + NLA_HDRLEN, sizeof(v));
+    return v;
+}
+
+static uint64_t nla_get_u64_val(const struct nlattr *a)
+{
+    uint64_t v;
+    memcpy(&v, (const char *)a + NLA_HDRLEN, sizeof(v));
+    return v;
+}
+
+/* Decode one TCA_CAKE_TIN_STATS_* attribute list into a tin struct. */
+static void tc__parse_tin(const struct nlattr *tin, cake_tin_stats_t *t)
+{
+    memset(t, 0, sizeof(*t));
+
+    int rem = tin->nla_len - NLA_HDRLEN;
+    const struct nlattr *a =
+        (const struct nlattr *)((const char *)tin + NLA_HDRLEN);
+
+    while (rem >= (int)sizeof(*a) &&
+           a->nla_len >= NLA_HDRLEN && a->nla_len <= rem) {
+        switch (a->nla_type) {
+        case TCA_CAKE_TIN_STATS_THRESHOLD_RATE64:    t->threshold_bps     = nla_get_u64_val(a); break;
+        case TCA_CAKE_TIN_STATS_SENT_PACKETS:        t->sent_packets      = nla_get_u32_val(a); break;
+        case TCA_CAKE_TIN_STATS_SENT_BYTES64:        t->sent_bytes        = nla_get_u64_val(a); break;
+        case TCA_CAKE_TIN_STATS_DROPPED_PACKETS:     t->dropped_packets   = nla_get_u32_val(a); break;
+        case TCA_CAKE_TIN_STATS_DROPPED_BYTES64:     t->dropped_bytes     = nla_get_u64_val(a); break;
+        case TCA_CAKE_TIN_STATS_ECN_MARKED_PACKETS:  t->ecn_packets       = nla_get_u32_val(a); break;
+        case TCA_CAKE_TIN_STATS_ECN_MARKED_BYTES64:  t->ecn_bytes         = nla_get_u64_val(a); break;
+        case TCA_CAKE_TIN_STATS_BACKLOG_BYTES:       t->backlog_bytes     = nla_get_u32_val(a); break;
+        case TCA_CAKE_TIN_STATS_TARGET_US:           t->target_us         = nla_get_u32_val(a); break;
+        case TCA_CAKE_TIN_STATS_INTERVAL_US:         t->interval_us       = nla_get_u32_val(a); break;
+        case TCA_CAKE_TIN_STATS_PEAK_DELAY_US:       t->peak_delay_us     = nla_get_u32_val(a); break;
+        case TCA_CAKE_TIN_STATS_AVG_DELAY_US:        t->avg_delay_us      = nla_get_u32_val(a); break;
+        case TCA_CAKE_TIN_STATS_BASE_DELAY_US:       t->base_delay_us     = nla_get_u32_val(a); break;
+        case TCA_CAKE_TIN_STATS_WAY_MISSES:          t->way_misses        = nla_get_u32_val(a); break;
+        case TCA_CAKE_TIN_STATS_WAY_COLLISIONS:      t->way_collisions    = nla_get_u32_val(a); break;
+        case TCA_CAKE_TIN_STATS_SPARSE_FLOWS:        t->sparse_flows      = nla_get_u32_val(a); break;
+        case TCA_CAKE_TIN_STATS_BULK_FLOWS:          t->bulk_flows        = nla_get_u32_val(a); break;
+        case TCA_CAKE_TIN_STATS_UNRESPONSIVE_FLOWS:  t->unresp_flows      = nla_get_u32_val(a); break;
+        default: break;
+        }
+
+        rem -= (int)NLA_ALIGN(a->nla_len);
+        a = (const struct nlattr *)((const char *)a + NLA_ALIGN(a->nla_len));
+    }
+}
+
+/* Decode the TCA_STATS_APP nest (qdisc-wide stats + tin stats nest). */
+static void tc__parse_cake_app(const struct nlattr *app, cake_qdisc_stats_t *out)
+{
+    int rem = app->nla_len - NLA_HDRLEN;
+    const struct nlattr *a =
+        (const struct nlattr *)((const char *)app + NLA_HDRLEN);
+
+    while (rem >= (int)sizeof(*a) &&
+           a->nla_len >= NLA_HDRLEN && a->nla_len <= rem) {
+        switch (a->nla_type) {
+        case TCA_CAKE_STATS_CAPACITY_ESTIMATE64:
+            out->capacity_bps = nla_get_u64_val(a);
+            break;
+        case TCA_CAKE_STATS_MEMORY_LIMIT:
+            out->memory_limit = nla_get_u32_val(a);
+            break;
+        case TCA_CAKE_STATS_MEMORY_USED:
+            out->memory_used = nla_get_u32_val(a);
+            break;
+        case TCA_CAKE_STATS_ACTIVE_QUEUES:
+            out->active_queues = nla_get_u32_val(a);
+            break;
+        case TCA_CAKE_STATS_TIN_STATS: {
+            /* Per-tin nests carry nla_type 1..N; kernel emits them
+             * in tin display order (bulk … voice). */
+            int trem = a->nla_len - NLA_HDRLEN;
+            const struct nlattr *ta =
+                (const struct nlattr *)((const char *)a + NLA_HDRLEN);
+
+            while (trem >= (int)sizeof(*ta) &&
+                   ta->nla_len >= NLA_HDRLEN && ta->nla_len <= trem) {
+                unsigned int idx = ta->nla_type;   /* 1-based */
+                if (idx >= 1 && idx <= 8 &&
+                    out->tin_cnt < 8) {
+                    tc__parse_tin(ta, &out->tins[out->tin_cnt]);
+                    out->tin_cnt++;
+                }
+                trem -= (int)NLA_ALIGN(ta->nla_len);
+                ta = (const struct nlattr *)((const char *)ta + NLA_ALIGN(ta->nla_len));
+            }
+            break;
+        }
+        default: break;
+        }
+
+        rem -= (int)NLA_ALIGN(a->nla_len);
+        a = (const struct nlattr *)((const char *)a + NLA_ALIGN(a->nla_len));
+    }
+}
+
+/*
+ * Decode one RTM_NEWQDISC reply message.
+ * Returns 1 if it was a plain CAKE qdisc (stats decoded), 0 otherwise.
+ */
+static int tc__parse_qdisc_msg(const struct nlmsghdr *nlh,
+                               cake_qdisc_stats_t *out)
+{
+    char kind[32] = "";
+    const struct nlattr *stats2 = NULL;
+
+    int rem = (int)NLMSG_PAYLOAD(nlh, sizeof(struct tcmsg));
+    const struct nlattr *a =
+        (const struct nlattr *)((const char *)NLMSG_DATA(nlh));
+
+    while (rem >= (int)sizeof(*a) &&
+           a->nla_len >= NLA_HDRLEN && a->nla_len <= rem) {
+        switch (a->nla_type) {
+        case TCA_KIND:
+            snprintf(kind, sizeof(kind), "%s", (const char *)a + NLA_HDRLEN);
+            break;
+        case TCA_STATS2:
+            stats2 = a;
+            break;
+        default: break;
+        }
+
+        rem -= (int)NLA_ALIGN(a->nla_len);
+        a = (const struct nlattr *)((const char *)a + NLA_ALIGN(a->nla_len));
+    }
+
+    /* Exact match: plain cake only (no cake_mq / cake-mq stats exist). */
+    if (strcmp(kind, "cake") != 0 || !stats2)
+        return 0;
+
+    int rem2 = stats2->nla_len - NLA_HDRLEN;
+    const struct nlattr *s =
+        (const struct nlattr *)((const char *)stats2 + NLA_HDRLEN);
+
+    while (rem2 >= (int)sizeof(*s) &&
+           s->nla_len >= NLA_HDRLEN && s->nla_len <= rem2) {
+        if (s->nla_type == TCA_STATS_APP) {
+            tc__parse_cake_app(s, out);
+            return 1;
+        }
+        rem2 -= (int)NLA_ALIGN(s->nla_len);
+        s = (const struct nlattr *)((const char *)s + NLA_ALIGN(s->nla_len));
+    }
+
+    return 0;
+}
+
+int tc_cake_get_stats(tc_nl_ctx_t *ctx, const char *iface,
+                      cake_qdisc_stats_t *out)
+{
+    if (!ctx || !iface || !iface[0] || !out) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    unsigned int ifindex = if_nametoindex(iface);
+    if (!ifindex) {
+        errno = ENODEV;
+        return -1;
+    }
+
+    /* ── RTM_GETQDISC dump request, filtered by ifindex ──────── */
+    char buf[128];
+    memset(buf, 0, sizeof(buf));
+
+    struct nlmsghdr *nlh = (struct nlmsghdr *)buf;
+    nlh->nlmsg_type  = RTM_GETQDISC;
+    nlh->nlmsg_flags = NLM_F_REQUEST | NLM_F_DUMP;
+
+    int pos = NLMSG_HDRLEN;
+    struct tcmsg *tc = (struct tcmsg *)(buf + pos);
+    tc->tcm_family  = AF_UNSPEC;
+    tc->tcm_ifindex = (int)ifindex;
+    pos += (int)NLMSG_ALIGN(sizeof(*tc));
+
+    nlh->nlmsg_len = (uint32_t)pos;
+    nlh->nlmsg_seq = ctx->seq++;
+    nlh->nlmsg_pid = 0;
+
+    struct sockaddr_nl dst;
+    memset(&dst, 0, sizeof(dst));
+    dst.nl_family = AF_NETLINK;
+
+    if (sendto(ctx->fd, buf, pos, 0,
+               (struct sockaddr *)&dst, sizeof(dst)) < 0)
+        return -1;
+
+    /* ── Collect replies until NLMSG_DONE ────────────────────── */
+    memset(out, 0, sizeof(*out));
+    int found = 0;
+
+    uint8_t rbuf[CAKE_DUMP_BUF_SIZE];
+    for (;;) {
+        ssize_t n = recv(ctx->fd, rbuf, sizeof(rbuf), 0);
+        if (n < (ssize_t)NLMSG_HDRLEN)
+            break;
+
+        struct nlmsghdr *h = (struct nlmsghdr *)rbuf;
+
+        /* Skip unsolicited notifications (link events etc.) */
+        if (h->nlmsg_seq != nlh->nlmsg_seq)
+            continue;
+
+        if (h->nlmsg_type == NLMSG_ERROR) {
+            struct nlmsgerr *err = (struct nlmsgerr *)NLMSG_DATA(h);
+            if (err->error) {
+                errno = -err->error;
+                return -1;
+            }
+            break;
+        }
+
+        if (h->nlmsg_type == NLMSG_DONE)
+            break;
+
+        if (h->nlmsg_type == RTM_NEWQDISC)
+            found |= tc__parse_qdisc_msg(h, out);
+    }
+
+    if (!found) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    return 0;
 }

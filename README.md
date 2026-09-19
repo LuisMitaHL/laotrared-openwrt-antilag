@@ -113,7 +113,7 @@ On cellular links the UL scheduling latency is inherently higher and more variab
 
 ## Live Status
 
-The LuCI Overview page displays a live status widget that polls every 2.5 seconds. When the daemon is running it shows:
+The LuCI Overview page displays a live status widget that polls every 3 seconds. When the daemon is running it shows:
 
 | Field | Description |
 | :--- | :--- |
@@ -124,7 +124,21 @@ The LuCI Overview page displays a live status widget that polls every 2.5 second
 | OWD DL / UL Δ | One-way delay delta above baseline — turns red above +10ms |
 | Uptime | Time since daemon started |
 
-The daemon writes `/var/run/antilag.json` every ~200ms. The file is removed on clean shutdown so the widget immediately reflects stopped state.
+Below the status row, the widget shows **live per-tin CAKE statistics** (the netlink equivalent of `tc -s qdisc show`) for the download (IFB) and upload (WAN) qdiscs, one table per direction:
+
+| Field | Description |
+| :--- | :--- |
+| Tin | Tin number in CAKE's display order (bulk → voice) |
+| Threshold | The tin's configured share of the shaper bandwidth |
+| Sent | Packets and bytes forwarded through the tin |
+| Dropped | Packets and bytes dropped by the AQM (red when non-zero) |
+| ECN Marks | Packets ECN-marked instead of dropped |
+| Backlog | Bytes currently queued in the tin |
+| Avg Delay | Average queuing delay in the tin |
+
+The header line also shows CAKE's capacity estimate and qdisc memory usage. Statistics are read from the kernel via an `RTM_GETQDISC` dump; they are only available for plain `cake` qdiscs and are omitted while the qdisc is down.
+
+The daemon writes `/var/run/antilag.json` every ~200ms, querying the kernel qdisc statistics on each tick. The file is removed on clean shutdown so the widget immediately reflects stopped state.
 
 ---
 

@@ -145,6 +145,61 @@ tc_nl_ctx_t *tc_nl_open(void);
  */
 void tc_nl_close(tc_nl_ctx_t *ctx);
 
+/* ── Per-tin runtime statistics ─────────────────────────────── */
+
+/*
+ * Statistics snapshot for one CAKE tin, decoded from the kernel's
+ * TCA_CAKE_TIN_STATS_* netlink attributes (RTM_GETQDISC dump).
+ */
+typedef struct {
+    uint64_t threshold_bps;      /* configured tin rate (share of bandwidth) */
+    uint32_t sent_packets;
+    uint64_t sent_bytes;
+    uint32_t dropped_packets;
+    uint64_t dropped_bytes;
+    uint32_t ecn_packets;        /* ECN marked */
+    uint64_t ecn_bytes;
+    uint32_t backlog_bytes;
+    uint32_t target_us;          /* AQM target */
+    uint32_t interval_us;        /* AQM interval */
+    uint32_t peak_delay_us;
+    uint32_t avg_delay_us;
+    uint32_t base_delay_us;
+    uint32_t way_misses;         /* flow hash lookups */
+    uint32_t way_collisions;
+    uint32_t sparse_flows;
+    uint32_t bulk_flows;
+    uint32_t unresp_flows;       /* unresponsive flows */
+} cake_tin_stats_t;
+
+/*
+ * Statistics snapshot for one CAKE qdisc, decoded from TCA_STATS2 /
+ * TCA_STATS_APP (sch_cake .dump_stats).
+ */
+typedef struct {
+    char     kind[16];           /* qdisc kind, "cake" */
+    int      tin_cnt;            /* number of populated tins (0..8) */
+    uint64_t capacity_bps;      /* CAKE capacity estimate */
+    uint32_t memory_limit;      /* bytes */
+    uint32_t memory_used;       /* bytes */
+    uint32_t active_queues;
+    cake_tin_stats_t tins[8];
+} cake_qdisc_stats_t;
+
+/*
+ * tc_cake_get_stats  –  query live CAKE qdisc + per-tin statistics.
+ *
+ * Performs an RTM_GETQDISC dump filtered on <iface> and decodes the
+ * kernel's per-tin statistics (equivalent of `tc -s qdisc show`).
+ *
+ * Returns 0 and fills *out on success.
+ * Returns -1 with errno set when the interface does not exist (ENODEV)
+ * or no plain "cake" qdisc is attached (ENOENT) — e.g. while the qdisc
+ * is down or a foreign qdisc is installed.
+ */
+int tc_cake_get_stats(tc_nl_ctx_t *ctx, const char *iface,
+                      cake_qdisc_stats_t *out);
+
 /* ── Runtime rate control ───────────────────────────────────── */
 
 /*
