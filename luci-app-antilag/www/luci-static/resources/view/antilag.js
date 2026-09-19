@@ -2,7 +2,6 @@
 'require view';
 'require form';
 'require uci';
-'require rpc';
 'require ui';
 
 var callInitAction = rpc.declare({
@@ -10,17 +9,6 @@ var callInitAction = rpc.declare({
     method: 'setInitAction',
     params: [ 'name', 'action' ],
     expect: { result: false }
-});
-
-/*
- * callFsStat – probe whether a sysfs/filesystem path exists.
- * Used to check for /sys/module/sch_cake_mq (present iff module is loaded).
- */
-var callFsStat = rpc.declare({
-    object: 'file',
-    method: 'stat',
-    params: [ 'path' ],
-    expect: { type: '' }
 });
 
 /*
@@ -55,17 +43,10 @@ function makeServiceButton(label, style, action) {
 return view.extend({
     /*
      * load() – runs before render().
-     * We load UCI config AND check whether sch_cake_mq is loaded in the
-     * kernel so render() can decide whether to show the cake-mq option.
-     *
-     * /sys/module/sch_cake_mq is created by the kernel when the module is
-     * loaded; fs.stat returns a non-empty type string when it exists.
+     * We load the UCI config for the form.
      */
     load: function() {
-        return Promise.all([
-            uci.load('antilag'),
-            callFsStat('/sys/module/sch_cake_mq').catch(function() { return ''; })
-        ]);
+        return uci.load('antilag');
     },
 
     /*
@@ -89,7 +70,6 @@ return view.extend({
     },
 
     render: function(data) {
-        var cakeMqAvailable = (data[1] !== '');
         var m, s, o;
 
         m = new form.Map('antilag', _('Antilag'),
@@ -156,22 +136,6 @@ return view.extend({
             /* ════════════════════════════════════════════════
              * CAKE Qdisc tab
              * ════════════════════════════════════════════════ */
-
-            /* cake-mq first – it's the headline new feature */
-            o = s.taboption('qdisc', form.Flag, 'cake_mq',
-                _('Use cake-mq (multi-queue)'),
-                cakeMqAvailable
-                    ? _('<strong>OpenWrt 25.12+ only.</strong> ' +
-                        'Uses the <code>cake-mq</code> qdisc instead of <code>cake</code>. ' +
-                        'Distributes CAKE scheduling across per-CPU TX queues for significantly ' +
-                        'lower CPU overhead at high throughput on supported multi-core routers ')
-                    : _('<span style="color:#c00">⚠ The <code>sch_cake_mq</code> kernel module ' +
-                        'is not loaded on this device.</span> ' +
-                        'Install <code>kmod-sched-cake-mq</code> (OpenWrt 25.12+) and reboot ' +
-                        'before enabling this option. Enabling it without the module has no ' +
-                        'effect — the daemon falls back to standard CAKE.'));
-            o.default = '0';
-            o.readonly = !cakeMqAvailable;
 
             o = s.taboption('qdisc', form.ListValue, 'cake_diffserv',
                 _('Traffic Classification'),

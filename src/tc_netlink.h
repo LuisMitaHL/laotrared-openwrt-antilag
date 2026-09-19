@@ -123,22 +123,6 @@ typedef struct {
 
     /* split_gso – split GSO super-packets before scheduling (recommended). */
     uint32_t split_gso;
-
-    /*
-     * use_cake_mq – use the "cake-mq" multi-queue qdisc instead of "cake".
-     *
-     * cake-mq is a multi-queue variant available in OpenWrt 25.12+.  It
-     * uses per-CPU TX queues and improves throughput on multi-core routers
-     * (e.g. Mediatek Filogic) while preserving all CAKE AQM behaviour.
-     *
-     * Requires kernel module:  kmod-sched-cake-mq  (OpenWrt 25.12+).
-     * Falls back silently to regular CAKE if the module is absent at
-     * setup time (ENOENT from the kernel).
-     *
-     *   0 = use "cake"    (default; works on all kernels)
-     *   1 = use "cake-mq" (OpenWrt 25.12+, multi-core benefit)
-     */
-    uint32_t use_cake_mq;
 } cake_qdisc_opts_t;
 
 /* ── Opaque handle ──────────────────────────────────────────── */

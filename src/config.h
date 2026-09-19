@@ -221,25 +221,6 @@ typedef struct {
      */
     int      cake_split_gso;
 
-    /*
-     * cake_mq – use the "cake-mq" multi-queue qdisc (OpenWrt 25.12+).
-     *
-     * cake-mq distributes CAKE scheduling across per-CPU TX queues, which
-     * significantly reduces CPU bottlenecks on multi-core SoCs (Filogic,
-     * IPQ807x, etc.) at high throughput while preserving all CAKE AQM logic.
-     *
-     * Requirements:
-     *   - OpenWrt 25.12 or later
-     *   - kmod-sched-cake-mq package installed
-     *   - Multi-core router (no benefit on single-core)
-     *
-     *   0 = use standard CAKE (default; safe on all hardware)
-     *   1 = use cake-mq      (OpenWrt 25.12+)
-     *
-     * UCI option: cake_mq
-     */
-    int      cake_mq;
-
     /* ── Pinger mode ──────────────────────────────────────────────────
      *
      * ping_type – selects the ICMP packet type used for OWD measurement.

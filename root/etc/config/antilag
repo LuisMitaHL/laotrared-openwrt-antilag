@@ -167,18 +167,3 @@ config antilag 'primary'
     # split_gso: split GSO super-packets before scheduling (recommended)
     #   1 = enabled (default), 0 = disabled
     option cake_split_gso '1'
-
-    # ── cake-mq (OpenWrt 25.12+) ─────────────────────────────
-    # cake_mq: use the multi-queue CAKE variant for improved multi-core
-    # throughput on routers with ≥2 CPU cores (Filogic, IPQ807x, etc.).
-    #
-    # Requirements:
-    #   - OpenWrt 25.12 or later
-    #   - kmod-sched-cake-mq package installed
-    #
-    # The daemon automatically falls back to standard CAKE if the
-    # kmod-sched-cake-mq module is not loaded.
-    #
-    #   0 = standard CAKE  (default; works on all hardware)
-    #   1 = cake-mq        (OpenWrt 25.12+, multi-core benefit)
-    option cake_mq '0'

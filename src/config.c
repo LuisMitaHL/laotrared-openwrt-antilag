@@ -212,7 +212,6 @@ void config_set_defaults(cake_config_t *cfg)
     cfg->cake_atm        = 0;   /* CAKE_ATM_NONE       – no ATM cells         */
     cfg->cake_rtt_us     = 0;              /* CAKE default 100 ms      */
     cfg->cake_split_gso  = 1;             /* split GSO ON             */
-    cfg->cake_mq         = 0;             /* standard CAKE (safe default) */
 
     /* Pinger mode */
     cfg->ping_type = 0;                   /* ICMP echo (works everywhere) */
@@ -370,7 +369,6 @@ int config_load(const char *section_name, cake_config_t *cfg)
         cfg->cake_ul_flow_mode = cfg->cake_flow_mode;
     UCI_INT(cake_atm,        "cake_atm");
     UCI_INT(cake_split_gso,  "cake_split_gso");
-    UCI_INT(cake_mq,         "cake_mq");
 
     /* cake_rtt_ms: UCI in ms > stored as µs (uint32_t) */
     {

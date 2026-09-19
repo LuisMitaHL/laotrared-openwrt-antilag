@@ -18,8 +18,7 @@ define Package/antilag
   CATEGORY := Network
   TITLE    := Antilag
   DEPENDS  := +libubox +libuci +kmod-ifb +kmod-sched-cake \
-              +kmod-sched-core +luci-base \
-              +CAKE_MQ:kmod-sched-cake-mq
+              +kmod-sched-core +luci-base
 endef
 
 define Package/antilag/description

@@ -463,9 +463,8 @@ static int tc__cake_qdisc_op(tc_nl_ctx_t *ctx,
     tc->tcm_parent  = parent;
     pos += (int)NLMSG_ALIGN(sizeof(*tc));
 
-    /* Select qdisc kind: "cake-mq" (OpenWrt 25.12+) or "cake" */
-    const char *kind = (opts && opts->use_cake_mq) ? "cake-mq" : "cake";
-    nl_put_str(buf, &pos, TCA_KIND, kind);
+    /* Select qdisc kind: always plain "cake" */
+    nl_put_str(buf, &pos, TCA_KIND, "cake");
     tc__cake_fill_opts(buf, &pos, rate_Bps, opts);
 
     return nl_transact(ctx, buf, pos);
@@ -729,24 +728,11 @@ int tc_dl_setup(tc_nl_ctx_t            *ctx,
     /*
      * Try change first; if absent, add.  This makes setup idempotent
      * if the daemon is restarted without a full teardown.
-     *
-     * If cake-mq was requested but the module isn't loaded, the kernel
-     * returns ENOENT on the create attempt.  In that case we transparently
-     * fall back to standard CAKE so the daemon still functions correctly.
      */
     ret = tc__cake_qdisc_op(ctx, ifb_idx, TC_H_ROOT, rate_Bps, opts_dl, 0);
     if (ret < 0 && errno == ENOENT)
         ret = tc__cake_qdisc_op(ctx, ifb_idx, TC_H_ROOT, rate_Bps, opts_dl,
                                 NLM_F_CREATE | NLM_F_EXCL);
-    if (ret < 0 && errno == ENOENT && opts_dl && opts_dl->use_cake_mq) {
-        syslog(LOG_WARNING,
-               "tc_dl_setup: cake-mq not available on '%s', falling back to cake",
-               ifb_if);
-        cake_qdisc_opts_t fallback = *opts_dl;
-        fallback.use_cake_mq = 0;
-        ret = tc__cake_qdisc_op(ctx, ifb_idx, TC_H_ROOT, rate_Bps, &fallback,
-                                NLM_F_CREATE | NLM_F_EXCL);
-    }
     if (ret < 0 && errno != EEXIST) {
         syslog(LOG_ERR, "tc_dl_setup: CAKE qdisc on '%s': %m", ifb_if);
         return -1;
@@ -849,16 +835,6 @@ int tc_ul_setup(tc_nl_ctx_t            *ctx,
 
     int ret = tc__cake_qdisc_op(ctx, wan_idx, TC_H_ROOT, rate_Bps, opts_ul,
                                 NLM_F_CREATE | NLM_F_EXCL);
-
-    if (ret < 0 && errno == ENOENT && opts_ul && opts_ul->use_cake_mq) {
-        syslog(LOG_WARNING,
-               "tc_ul_setup: cake-mq not available on '%s', falling back to cake",
-               wan_if);
-        cake_qdisc_opts_t fallback = *opts_ul;
-        fallback.use_cake_mq = 0;
-        ret = tc__cake_qdisc_op(ctx, wan_idx, TC_H_ROOT, rate_Bps, &fallback,
-                                NLM_F_CREATE | NLM_F_EXCL);
-    }
 
     if (ret < 0 && errno == EEXIST) {
         /*

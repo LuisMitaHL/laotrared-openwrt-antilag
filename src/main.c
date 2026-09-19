@@ -318,7 +318,6 @@ static cake_qdisc_opts_t make_dl_opts(const cake_config_t *c)
     o.atm        = (uint32_t)c->cake_atm;
     o.rtt_us     = c->cake_rtt_us;
     o.split_gso  = (uint32_t)c->cake_split_gso;
-    o.use_cake_mq = (uint32_t)c->cake_mq;
     return o;
 }
 
@@ -343,7 +342,6 @@ static cake_qdisc_opts_t make_ul_opts(const cake_config_t *c)
     o.atm        = (uint32_t)c->cake_atm;
     o.rtt_us     = c->cake_rtt_us;
     o.split_gso  = (uint32_t)c->cake_split_gso;
-    o.use_cake_mq = (uint32_t)c->cake_mq;
     return o;
 }
 
