@@ -84,12 +84,12 @@ function fmtUs(us) {
 
 function loadCell(load, bb) {
     if (bb)
-        return E('td', { 'class': 'td', 'style': 'color:#c00;font-weight:bold' },
+        return E('td', { 'class': 'td', 'style': 'color:var(--error-color-medium,#c00);font-weight:bold' },
                  'Bufferbloat');
     var map = {
-        high:    [ 'color:#c07700;font-weight:bold', '▲ High'   ],
-        low:     [ 'color:#888',                     '▼ Low'    ],
-        running: [ 'color:#1a7f1a',                  '● Normal' ]
+        high:    [ 'color:var(--warn-color-medium,#c07700);font-weight:bold', '▲ High'   ],
+        low:     [ 'color:var(--text-color-low,#888)',                        '▼ Low'    ],
+        running: [ 'color:var(--success-color-medium,#1a7f1a)',               '● Normal' ]
     };
     var e = map[load] || [ '', '— Idle' ];
     return E('td', { 'class': 'td', 'style': e[0] }, e[1]);
@@ -98,11 +98,11 @@ function loadCell(load, bb) {
 /* ── Table builders ──────────────────────────────────────────── */
 
 function buildStatsTable(st) {
-    var stateColors = { running: '#1a7f1a', idle: '#888', stall: '#c00' };
-    var color = stateColors[st.state] || '#888';
+    var stateColors = { running: 'var(--success-color-medium,#1a7f1a)', idle: 'var(--text-color-low,#888)', stall: 'var(--error-color-medium,#c00)' };
+    var color = stateColors[st.state] || 'var(--text-color-low,#888)';
     var label = st.state ? (st.state.charAt(0).toUpperCase() + st.state.slice(1)) : '?';
-    var owdDlStyle = (st.avg_owd_dl_ms10 > 100) ? 'color:#c00' : 'color:#555';
-    var owdUlStyle = (st.avg_owd_ul_ms10 > 100) ? 'color:#c00' : 'color:#555';
+    var owdDlStyle = (st.avg_owd_dl_ms10 > 100) ? 'color:var(--error-color-medium,#c00)' : 'color:var(--text-color-medium,#555)';
+    var owdUlStyle = (st.avg_owd_ul_ms10 > 100) ? 'color:var(--error-color-medium,#c00)' : 'color:var(--text-color-medium,#555)';
 
     return E('table', { 'class': 'table', 'id': 'antilag_status_table' }, [
         E('tr', { 'class': 'tr table-titles' }, [
@@ -120,14 +120,14 @@ function buildStatsTable(st) {
         E('tr', { 'class': 'tr' }, [
             E('td', { 'class': 'td', 'style': 'font-weight:bold;color:' + color }, label),
             E('td', { 'class': 'td', 'style': 'font-weight:bold' }, fmtKbps(st.shaper_dl_kbps)),
-            E('td', { 'class': 'td', 'style': 'color:#555' },       fmtKbps(st.achieved_dl_kbps)),
+            E('td', { 'class': 'td', 'style': 'color:var(--text-color-medium,#555)' },       fmtKbps(st.achieved_dl_kbps)),
             loadCell(st.load_dl, st.bb_dl),
             E('td', { 'class': 'td', 'style': owdDlStyle },         fmtOwd(st.avg_owd_dl_ms10)),
             E('td', { 'class': 'td', 'style': 'font-weight:bold' }, fmtKbps(st.shaper_ul_kbps)),
-            E('td', { 'class': 'td', 'style': 'color:#555' },       fmtKbps(st.achieved_ul_kbps)),
+            E('td', { 'class': 'td', 'style': 'color:var(--text-color-medium,#555)' },       fmtKbps(st.achieved_ul_kbps)),
             loadCell(st.load_ul, st.bb_ul),
             E('td', { 'class': 'td', 'style': owdUlStyle },         fmtOwd(st.avg_owd_ul_ms10)),
-            E('td', { 'class': 'td', 'style': 'color:#555' },       fmtUptime(st.uptime_s))
+            E('td', { 'class': 'td', 'style': 'color:var(--text-color-medium,#555)' },       fmtUptime(st.uptime_s))
         ])
     ]);
 }
@@ -159,12 +159,12 @@ function buildTinTable(title, qd) {
                 fmtPkts(t.sent_packets) + ' / ' + fmtBytes(t.sent_bytes)),
             E('td', {
                 'class': 'td',
-                'style': t.dropped_packets ? 'color:#c00' : 'color:#555'
+                'style': t.dropped_packets ? 'color:var(--error-color-medium,#c00)' : 'color:var(--text-color-medium,#555)'
             }, t.dropped_packets + ' / ' + fmtBytes(t.dropped_bytes)),
             E('td', { 'class': 'td' },
                 t.ecn_packets ? fmtPkts(t.ecn_packets) : '—'),
             E('td', { 'class': 'td' }, fmtBytes(t.backlog_bytes)),
-            E('td', { 'class': 'td', 'style': 'color:#555' }, fmtUs(t.avg_delay_us))
+            E('td', { 'class': 'td', 'style': 'color:var(--text-color-medium,#555)' }, fmtUs(t.avg_delay_us))
         ]));
     }
 
@@ -175,7 +175,7 @@ function buildTinTable(title, qd) {
     if (qd.memory_limit)
         meta.push(_('Memory') + ': ' + fmtBytes(qd.memory_used) + ' / ' + fmtBytes(qd.memory_limit));
     if (meta.length)
-        header.push(E('div', { 'style': 'color:#555;margin-bottom:0.4em' }, meta.join(' · ')));
+        header.push(E('div', { 'style': 'color:var(--text-color-medium,#555);margin-bottom:0.4em' }, meta.join(' · ')));
 
     return E('div', { 'class': 'cbi-section', 'style': 'margin-top:0.5em' },
         header.concat([ E('table', { 'class': 'table' }, rows) ]));
@@ -259,20 +259,20 @@ function buildInstanceBlock(inst) {
 
         if (parts.length === 1)
             parts.push(E('div', {
-                'style': 'color:#555;margin-top:0.5em'
+                'style': 'color:var(--text-color-medium,#555);margin-top:0.5em'
             }, _('CAKE per-tin statistics unavailable (qdisc not up).')));
 
         for (var i = 0; i < parts.length; i++)
             wrap.appendChild(parts[i]);
     }
     else if (inst.exists && inst.raw)
-        wrap.appendChild(buildSimpleTable(_('Running – status parse error'), '#c00'));
+        wrap.appendChild(buildSimpleTable(_('Running – status parse error'), 'var(--error-color-medium,#c00)'));
     else if (inst.exists)
-        wrap.appendChild(buildSimpleTable(_('Running – status unreadable'), '#c00'));
+        wrap.appendChild(buildSimpleTable(_('Running – status unreadable'), 'var(--error-color-medium,#c00)'));
     else if (instanceEnabled(inst.sid))
-        wrap.appendChild(buildSimpleTable(_('Enabled – not running'), '#c07700'));
+        wrap.appendChild(buildSimpleTable(_('Enabled – not running'), 'var(--warn-color-medium,#c07700)'));
     else
-        wrap.appendChild(buildSimpleTable(_('Disabled'), '#888'));
+        wrap.appendChild(buildSimpleTable(_('Disabled'), 'var(--text-color-low,#888)'));
 
     return wrap;
 }
