@@ -244,12 +244,45 @@ return view.extend({
               'Disable to hold the upload qdisc at its base rate and only measure.'));
         o.default = '1';
 
-        moptDyn('general', form.Value, 'ping_bind_if', _('Ping Bind Interface'),
-            _('Bind the ICMP measurement socket to this interface ' +
-              '(typically the same as the Upload Interface). ' +
+        /*
+         * ping_bind_if – checkbox backed by the string UCI option.
+         * Checked = bind ICMP socket to the Upload Interface (ul_if);
+         * unchecked = unbound, follow routing table (single-WAN).
+         * cfgvalue maps non-empty string > '1'; write() stores the
+         * current ul_if (normalizing legacy values) or deletes the
+         * option when unchecked, so the daemon ('SO_BINDTODEVICE when
+         * non-empty') needs no change. Never store '0': any non-empty
+         * value would bind to a bogus device.
+         */
+        o = moptDyn('general', form.Flag, 'ping_bind_if', _('Ping Bind Interface'),
+            _('Bind the ICMP measurement socket to the Upload Interface ' +
+              '(same value as above). ' +
               'Required for multi-WAN: without it, policy routing (mwan3) may send ' +
               'reflector pings out an arbitrary WAN and corrupt the per-WAN measurement. ' +
-              'Leave empty to follow the routing table (single-WAN).'));
+              'Leave unchecked to follow the routing table (single-WAN).'));
+        o.default = '0';
+        o.rmempty = true;
+        o.cfgvalue = function(section_id) {
+            var v = uci.get('antilag', section_id, 'ping_bind_if');
+            return (v && v.length > 0) ? '1' : '0';
+        };
+        o.write = function(section_id, value) {
+            if (value !== '1')
+                return uci.unset('antilag', section_id, 'ping_bind_if');
+            var ul = uci.get('antilag', section_id, 'ul_if');
+            if (!ul) {
+                var el = this.map.findElement('id',
+                    'widget.cbid.%s.%s.ul_if'.format(this.map.config, section_id));
+                if (el && el.value)
+                    ul = el.value;
+            }
+            if (ul)
+                return uci.set('antilag', section_id, 'ping_bind_if', ul);
+            return uci.unset('antilag', section_id, 'ping_bind_if');
+        };
+        o.remove = function(section_id) {
+            return uci.unset('antilag', section_id, 'ping_bind_if');
+        };
 
         function rateOption(tab, name, label, description, def) {
             var opt = moptDyn(tab, form.Value, name, label, description);
