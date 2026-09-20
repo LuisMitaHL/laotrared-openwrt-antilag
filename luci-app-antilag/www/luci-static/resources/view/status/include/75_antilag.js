@@ -1,5 +1,5 @@
 'use strict';
-'require view';
+'require baseclass';
 'require uci';
 'require antilag.status as antilagStatus';
 
@@ -8,7 +8,7 @@
  * Thin wrapper: all rendering/polling logic lives in the shared
  * antilag.status module (also used by the Antilag settings page).
  */
-return view.extend({
+return baseclass.extend({
     title: _('Antilag'),
 
     load: function() {
