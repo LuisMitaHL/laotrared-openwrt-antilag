@@ -27,6 +27,8 @@ config antilag 'wan'
     # ── Interfaces ───────────────────────────────────────────
     # dl_if: IFB interface for shaped ingress (created automatically at startup).
     #        The LuCI page generates it from ul_if as ifb-<ul_if> (e.g. ifb-wan).
+    #        Names longer than the kernel's 15-character interface-name limit
+    #        are shortened automatically (see README.md).
     # ul_if: WAN-facing interface for egress shaping
     option dl_if 'ifb-wan'
     option ul_if 'wan'

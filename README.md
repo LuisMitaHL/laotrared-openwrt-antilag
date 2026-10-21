@@ -89,6 +89,8 @@ vi /etc/config/antilag
 
 The minimum required options are the interface names and rate limits. Ensure `dl_if` and `ul_if` match your router's actual interfaces — for typical setups, download traffic arrives on an IFB interface and upload on the physical WAN interface. The LuCI page picks `ul_if` from the device list and generates `dl_if` automatically as `ifb-<ul_if>` (for example `ifb-wan`); when editing the config by hand any IFB name may be used.
 
+The kernel limits interface names to 15 characters, so `ifb-<ul_if>` breaks for long interface names such as `pppoe-wentel6`. When `ifb-<ul_if>` exceeds 15 characters, both the LuCI page and the daemon shorten it to `ifb` + the first 8 characters of `ul_if` + 4 hex digits of a hash of the full name (e.g. `ifbpppoe-web71b`) so distinct long names stay distinct.
+
 ```
 config antilag 'wan'
     option enabled                  '1'

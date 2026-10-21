@@ -7,6 +7,7 @@
 #include <limits.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <syslog.h>
 #include <uci.h>
 
 /* ── helpers ─────────────────────────────────────────────────── */
@@ -18,6 +19,41 @@ static const char *uci_get(struct uci_context *ctx,
     if (o && o->type == UCI_TYPE_STRING)
         return o->v.string;
     return NULL;
+}
+
+/*
+ * derive_dl_if – shorten the download-IFB name when it exceeds the
+ * kernel's 15-character interface-name limit (IFNAMSIZ - 1).
+ *
+ * "ifb-<ul_if>" normally fits.  When ul_if is so long that the derived
+ * name does not (e.g. pppoe-wentel6 -> 17 chars, which RTM_NEWLINK
+ * rejects with EINVAL), fall back to "ifb" + the first 8 characters of
+ * ul_if + 4 hex digits of a djb2 hash of the full name (3 + 8 + 4 = 15),
+ * so distinct long names stay distinct.  Deterministic across boots.
+ * Keep in sync with the LuCI deriveDlIf() helper in luci-app-antilag/
+ * www/luci-static/resources/view/antilag.js.
+ */
+static void derive_dl_if(cake_config_t *cfg)
+{
+    char name[16];
+    unsigned long h = 5381;
+    const char *p;
+
+    if (strlen(cfg->dl_if) <= 15 || !cfg->ul_if[0])
+        return;
+
+    for (p = cfg->ul_if; *p; p++)
+        h = (h * 33 + (unsigned char)*p) & 0xffffffffUL;
+
+    snprintf(name, sizeof(name), "ifb%.8s%04lx",
+             cfg->ul_if, h & 0xffffUL);
+
+    syslog(LOG_WARNING,
+           "config: dl_if '%s' exceeds the kernel's 15-character "
+           "interface-name limit, using '%s' (derived from ul_if '%s')",
+           cfg->dl_if, name, cfg->ul_if);
+
+    snprintf(cfg->dl_if, sizeof(cfg->dl_if), "%s", name);
 }
 
 /*
@@ -269,6 +305,7 @@ int config_load(const char *section_name, cake_config_t *cfg)
 
     UCI_STR(dl_if,                      "dl_if");
     UCI_STR(ul_if,                      "ul_if");
+    derive_dl_if(cfg);
     UCI_STR(ping_bind_if,               "ping_bind_if");
     UCI_INT(adjust_dl_shaper_rate,      "adjust_dl_shaper_rate");
     UCI_INT(adjust_ul_shaper_rate,      "adjust_ul_shaper_rate");

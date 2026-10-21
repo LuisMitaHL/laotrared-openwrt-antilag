@@ -43,6 +43,30 @@ function makeServiceButton(label, style, action) {
     }, label);
 }
 
+/*
+ * deriveDlIf – name the download IFB after the upload interface.
+ *
+ * "ifb-<ul>" normally fits the kernel's 15-character interface-name
+ * limit (IFNAMSIZ-1).  When ul is so long that it does not (e.g.
+ * pppoe-wentel6 -> 17 chars, rejected by RTM_NEWLINK with EINVAL),
+ * fall back to "ifb" + first 8 characters of ul + 4 hex digits of a
+ * djb2 hash of the full name (3 + 8 + 4 = 15), so distinct long names
+ * stay distinct.  Deterministic across boots.  Keep in sync with the
+ * daemon-side derive_dl_if() in antilag/src/config.c.
+ */
+function deriveDlIf(ul) {
+    if (!ul)
+        return '';
+    var name = 'ifb-' + ul;
+    if (name.length <= 15)
+        return name;
+    var h = 5381;
+    for (var i = 0; i < ul.length; i++)
+        h = (h * 33 + ul.charCodeAt(i)) >>> 0;
+    return 'ifb' + ul.slice(0, 8) +
+        ((h & 0xffff).toString(16).padStart(4, '0'));
+}
+
 return view.extend({
     load: function() {
         return uci.load('antilag');
@@ -162,7 +186,9 @@ return view.extend({
             _('WAN-facing interface for egress shaping, chosen from the ' +
               'available devices (e.g. <code>wan</code>). ' +
               'Must be unique per instance. The download IFB interface is ' +
-              'generated from this value as <code>ifb-&lt;interface&gt;</code>.'));
+              'generated from this value as <code>ifb-&lt;interface&gt;</code>; ' +
+              'names longer than the kernel&apos;s 15-character interface-name ' +
+              'limit are shortened automatically.'));
         o.rmempty = false;
         o.noaliases = true;
         o.filter = function(section_id, value) {
@@ -175,7 +201,7 @@ return view.extend({
             var el = this.map.findElement('id',
                 'widget.cbid.%s.%s.dl_if'.format(this.map.config, section_id));
             if (el)
-                el.value = value ? 'ifb-' + value : '';
+                el.value = deriveDlIf(value);
         };
 
         o = s.taboption('general', form.Value, 'base_dl_shaper_rate_kbps',
@@ -210,7 +236,9 @@ return view.extend({
         /*
          * dl_if – IFB interface, always generated from ul_if as
          * ifb-<ul_if> (the sqm-scripts model: e.g. ul_if "wan" gives
-         * "ifb-wan").  The field is read-only; both cfgvalue() and
+         * "ifb-wan").  Long names that would exceed the kernel's
+         * 15-character limit are shortened (see deriveDlIf) so they
+         * still create.  The field is read-only; both cfgvalue() and
          * formvalue() derive the name so a stale value in UCI is corrected
          * on the next save, and forcewrite ensures it is persisted even
          * when nothing else changed.
@@ -219,15 +247,16 @@ return view.extend({
             _('Download Interface'),
             _('IFB interface that carries shaped ingress traffic ' +
               '(<code>ifb-wan</code> when the upload interface is ' +
-              '<code>wan</code>). Generated automatically from the Upload ' +
-              'Interface and created by the daemon at startup if it does ' +
-              'not exist.'));
+              '<code>wan</code>). Names longer than the kernel&apos;s ' +
+              '15-character interface-name limit (e.g. for long pppoe ' +
+              'interfaces) are shortened automatically. Generated at ' +
+              'startup by the daemon if it does not exist.'));
         o.readonly = true;
         o.forcewrite = true;
         o.rmempty = false;
         o.cfgvalue = function(section_id) {
             var ul = uci.get('antilag', section_id, 'ul_if');
-            return ul ? 'ifb-' + ul : null;
+            return deriveDlIf(ul) || null;
         };
         o.formvalue = function(section_id) {
             return this.cfgvalue(section_id);
